@@ -62,7 +62,7 @@ class Terraform:
         command = ["terraform"]
 
         if chdir is not None:
-            return command + [f"chdir={chdir}"]
+            return command + [f"-chdir={chdir}"]
 
         return command
 

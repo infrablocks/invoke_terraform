@@ -30,7 +30,7 @@ class TestTerraform:
         terraform.init(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "chdir=/some/dir", "init"]
+            ["terraform", "-chdir=/some/dir", "init"]
         )
 
     def test_init_executes_with_backend_config_dictionary(self):
@@ -70,7 +70,7 @@ class TestTerraform:
         terraform.plan(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "chdir=/some/dir", "plan"]
+            ["terraform", "-chdir=/some/dir", "plan"]
         )
 
     def test_plan_executes_with_vars(self):
@@ -99,7 +99,7 @@ class TestTerraform:
         terraform.apply(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "chdir=/some/dir", "apply"]
+            ["terraform", "-chdir=/some/dir", "apply"]
         )
 
     def test_apply_executes_with_vars(self):
@@ -132,7 +132,7 @@ class TestTerraform:
         terraform.select_workspace(workspace, chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "chdir=/some/dir", "workspace", "select", workspace]
+            ["terraform", "-chdir=/some/dir", "workspace", "select", workspace]
         )
 
     def test_select_workspace_executes_with_or_create(self):
