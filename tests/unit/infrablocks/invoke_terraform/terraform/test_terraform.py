@@ -112,3 +112,36 @@ class TestTerraform:
         executor.execute.assert_called_once_with(
             ["terraform", "apply", '-var="foo=1"']
         )
+
+    def test_select_workspace_executes(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        workspace = "workspace"
+
+        terraform.select_workspace(workspace)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "workspace", "select", workspace]
+        )
+
+    def test_select_workspace_executes_with_chdir(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        workspace = "workspace"
+
+        terraform.select_workspace(workspace, chdir="/some/dir")
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "chdir=/some/dir", "workspace", "select", workspace]
+        )
+
+    def test_select_workspace_executes_with_or_create(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        workspace = "workspace"
+
+        terraform.select_workspace(workspace, or_create=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "workspace", "select", workspace, "-or-create=true"]
+        )

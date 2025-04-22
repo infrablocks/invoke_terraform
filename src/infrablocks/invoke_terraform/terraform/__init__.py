@@ -1,5 +1,4 @@
 from .terraform import BackendConfig, ConfigurationValue, Variables
-from .terraform import Configuration as Configuration
 from .terraform import Executor as Executor
 from .terraform import Terraform as Terraform
 

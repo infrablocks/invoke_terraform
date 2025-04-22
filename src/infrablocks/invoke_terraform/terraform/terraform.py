@@ -1,16 +1,8 @@
-from dataclasses import dataclass
 from typing import Dict, Iterable, List, Optional, Union
 
 type ConfigurationValue = Union[bool, int, float, str, None]
 type Variables = Dict[str, ConfigurationValue]
 type BackendConfig = Union[str, Dict[str, ConfigurationValue]]
-
-
-@dataclass
-class Configuration:
-    source_directory: str
-    backend_config: BackendConfig
-    variables: Variables
 
 
 class Executor:
@@ -48,6 +40,20 @@ class Terraform:
     ):
         base_command = self._build_base_command(chdir)
         command = base_command + ["apply"] + self._build_vars(vars)
+
+        self._executor.execute(command)
+
+    def select_workspace(
+        self,
+        workspace: str,
+        chdir: Optional[str] = None,
+        or_create: bool = False,
+    ):
+        base_command = self._build_base_command(chdir)
+        command = base_command + ["workspace", "select", workspace]
+
+        if or_create:
+            command = command + ["-or-create=true"]
 
         self._executor.execute(command)
 
@@ -99,43 +105,3 @@ class Terraform:
                 self._format_configuration_value("-backend-config", key, value)
                 for key, value in backend_config.items()
             ]
-
-    # def init(context: Context, configuration: Configuration):
-    #     _validate_configuration(configuration)
-    #     command = f"terraform -chdir={configuration.source_directory} init "
-    #     command = _append_backend_config(command, configuration.backend_config)
-    #     context.run(command, echo=True)
-    #
-    # def _append_backend_config(command: str, backend_config: BackendConfig) -> str:
-    #     if isinstance(backend_config, str):
-    #         return f"{command} -backend-config={backend_config}"
-    #     else:
-    #         for key, value in backend_config.items():
-    #             command += f' -backend-config="{key}={value}"'
-    #         return command
-    #
-    # def plan(context: Context, configuration: Configuration):
-    #     _validate_configuration(configuration)
-    #     command = "terraform -chdir={configuration.source_directory} plan"
-    #     command = _append_vars(command, configuration.variables)
-    #     context.run(command, echo=True)
-    #
-    # def _append_vars(command: str, variables: Variables) -> str:
-    #     if not variables:
-    #         return command
-    #
-    #     for key, value in variables.items():
-    #         if isinstance(value, bool):
-    #             command += f' -var="{key}={str(value).lower()}"'
-    #         elif isinstance(value, (int, float)):
-    #             command += f' -var="{key}={value}"'
-    #         elif isinstance(value, str):
-    #             command += f' -var="{key}={value}"'
-    #         elif value is None:
-    #             command += f' -var="{key}=null"'
-    #
-    #     return command
-    #
-    # def _validate_configuration(configuration: Configuration):
-    #     if not configuration.source_directory:
-    #         raise Exception("source directory was empty")

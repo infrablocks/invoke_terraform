@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Callable
 
 from invoke.collection import Collection
@@ -7,8 +8,26 @@ import infrablocks.invoke_factory as invoke_factory
 import infrablocks.invoke_terraform.terraform as tf
 from infrablocks.invoke_terraform.terraform_factory import TerraformFactory
 
+
+@dataclass
+class Configuration:
+    source_directory: str
+    backend_config: tf.BackendConfig
+    variables: tf.Variables
+    workspace: str
+
+    @staticmethod
+    def create_empty():
+        return Configuration(
+            source_directory="",
+            backend_config={},
+            variables={},
+            workspace="default",
+        )
+
+
 type PreTaskFunction = Callable[
-    [Context, invoke_factory.Arguments, tf.Configuration], None
+    [Context, invoke_factory.Arguments, Configuration], None
 ]
 
 
@@ -40,13 +59,18 @@ class TaskFactory:
         pre_task_function: PreTaskFunction,
     ) -> invoke_factory.BodyCallable[None]:
         def plan(context: Context, arguments: invoke_factory.Arguments):
-            configuration = tf.Configuration("", {}, {})
+            configuration = Configuration.create_empty()
             pre_task_function(
                 context,
                 arguments,
                 configuration,
             )
             terraform = self._terraformFactory.build(context)
+            terraform.select_workspace(
+                configuration.workspace,
+                chdir=configuration.source_directory,
+                or_create=True,
+            )
             terraform.init(
                 chdir=configuration.source_directory,
                 backend_config=configuration.backend_config,
@@ -63,13 +87,18 @@ class TaskFactory:
         pre_task_function: PreTaskFunction,
     ) -> invoke_factory.BodyCallable[None]:
         def apply(context: Context, arguments: invoke_factory.Arguments):
-            configuration = tf.Configuration("", {}, {})
+            configuration = Configuration.create_empty()
             pre_task_function(
                 context,
                 arguments,
                 configuration,
             )
             terraform = self._terraformFactory.build(context)
+            terraform.select_workspace(
+                configuration.workspace,
+                chdir=configuration.source_directory,
+                or_create=True,
+            )
             terraform.init(
                 chdir=configuration.source_directory,
                 backend_config=configuration.backend_config,
