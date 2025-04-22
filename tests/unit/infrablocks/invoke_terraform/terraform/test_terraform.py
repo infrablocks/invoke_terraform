@@ -143,5 +143,5 @@ class TestTerraform:
         terraform.select_workspace(workspace, or_create=True)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "workspace", "select", workspace, "-or-create=true"]
+            ["terraform", "workspace", "select", "-or-create=true", workspace]
         )

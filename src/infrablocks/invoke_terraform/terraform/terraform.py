@@ -50,10 +50,12 @@ class Terraform:
         or_create: bool = False,
     ):
         base_command = self._build_base_command(chdir)
-        command = base_command + ["workspace", "select", workspace]
+        command = base_command + ["workspace", "select"]
 
         if or_create:
             command = command + ["-or-create=true"]
+
+        command = command + [workspace]
 
         self._executor.execute(command)
 
