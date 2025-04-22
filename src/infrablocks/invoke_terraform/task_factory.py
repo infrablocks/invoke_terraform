@@ -4,53 +4,79 @@ from invoke.collection import Collection
 from invoke.context import Context
 
 import infrablocks.invoke_factory as invoke_factory
-import infrablocks.invoke_terraform.terraform as terraform
+import infrablocks.invoke_terraform.terraform as tf
+from infrablocks.invoke_terraform.terraform_factory import TerraformFactory
 
 type PreTaskFunction = Callable[
-    [Context, invoke_factory.Arguments, terraform.Configuration], None
+    [Context, invoke_factory.Arguments, tf.Configuration], None
 ]
 
 
-def define_tasks(
-    collection_name: str,
-    task_parameters: invoke_factory.Parameters,
-    pre_task_function: PreTaskFunction,
-):
-    collection = Collection(collection_name)
-    plan_task = invoke_factory.create_task(_create_plan(pre_task_function), task_parameters)
-    apply_task = invoke_factory.create_task(_create_apply(pre_task_function), task_parameters)
+class TaskFactory:
+    def __init__(self):
+        self._terraformFactory = TerraformFactory()
 
-    #TODO: investigate type issue
-    collection.add_task(plan_task) # pyright: ignore[reportUnknownMemberType]
-    collection.add_task(apply_task) # pyright: ignore[reportUnknownMemberType]
-    return collection
-
-
-def _create_plan(
-    pre_task_function: PreTaskFunction,
-) -> invoke_factory.BodyCallable[None]:
-    def plan(context: Context, arguments: invoke_factory.Arguments):
-        configuration = terraform.Configuration("", {}, {})
-        pre_task_function(
-            context,
-            arguments,
-            configuration,
+    def create(
+        self,
+        collection_name: str,
+        task_parameters: invoke_factory.Parameters,
+        pre_task_function: PreTaskFunction,
+    ) -> Collection:
+        collection = Collection(collection_name)
+        plan_task = invoke_factory.create_task(
+            self._create_plan(pre_task_function), task_parameters
         )
-        terraform.plan(context, configuration)
-
-    return plan
-
-
-def _create_apply(
-    pre_task_function: PreTaskFunction,
-) -> invoke_factory.BodyCallable[None]:
-    def apply(context: Context, arguments: invoke_factory.Arguments):
-        configuration = terraform.Configuration("", {}, {})
-        pre_task_function(
-            context,
-            arguments,
-            configuration,
+        apply_task = invoke_factory.create_task(
+            self._create_apply(pre_task_function), task_parameters
         )
-        print("TODO implement apply")
 
-    return apply
+        # TODO: investigate type issue
+        collection.add_task(plan_task)  # pyright: ignore[reportUnknownMemberType]
+        collection.add_task(apply_task)  # pyright: ignore[reportUnknownMemberType]
+        return collection
+
+    def _create_plan(
+        self,
+        pre_task_function: PreTaskFunction,
+    ) -> invoke_factory.BodyCallable[None]:
+        def plan(context: Context, arguments: invoke_factory.Arguments):
+            configuration = tf.Configuration("", {}, {})
+            pre_task_function(
+                context,
+                arguments,
+                configuration,
+            )
+            terraform = self._terraformFactory.build(context)
+            terraform.init(
+                chdir=configuration.source_directory,
+                backend_config=configuration.backend_config,
+            )
+            terraform.plan(
+                chdir=configuration.source_directory,
+                vars=configuration.variables,
+            )
+
+        return plan
+
+    def _create_apply(
+        self,
+        pre_task_function: PreTaskFunction,
+    ) -> invoke_factory.BodyCallable[None]:
+        def apply(context: Context, arguments: invoke_factory.Arguments):
+            configuration = tf.Configuration("", {}, {})
+            pre_task_function(
+                context,
+                arguments,
+                configuration,
+            )
+            terraform = self._terraformFactory.build(context)
+            terraform.init(
+                chdir=configuration.source_directory,
+                backend_config=configuration.backend_config,
+            )
+            terraform.apply(
+                chdir=configuration.source_directory,
+                vars=configuration.variables,
+            )
+
+        return apply
