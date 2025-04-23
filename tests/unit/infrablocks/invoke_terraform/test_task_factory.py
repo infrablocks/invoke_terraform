@@ -87,7 +87,7 @@ class TestTaskFactory:
 
         assert collection.tasks["apply"] is not None
 
-    def test_apply_invokes_init_and_plan_and_apply(self):
+    def test_apply_invokes_init_and_apply(self):
         terraform = Mock(spec=tf.Terraform)
         task_factory = TaskFactory()
         task_factory._terraformFactory = TerraformFactory(terraform)

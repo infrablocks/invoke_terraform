@@ -66,14 +66,14 @@ class TaskFactory:
                 configuration,
             )
             terraform = self._terraformFactory.build(context)
+            terraform.init(
+                chdir=configuration.source_directory,
+                backend_config=configuration.backend_config,
+            )
             terraform.select_workspace(
                 configuration.workspace,
                 chdir=configuration.source_directory,
                 or_create=True,
-            )
-            terraform.init(
-                chdir=configuration.source_directory,
-                backend_config=configuration.backend_config,
             )
             terraform.plan(
                 chdir=configuration.source_directory,
@@ -94,14 +94,14 @@ class TaskFactory:
                 configuration,
             )
             terraform = self._terraformFactory.build(context)
+            terraform.init(
+                chdir=configuration.source_directory,
+                backend_config=configuration.backend_config,
+            )
             terraform.select_workspace(
                 configuration.workspace,
                 chdir=configuration.source_directory,
                 or_create=True,
-            )
-            terraform.init(
-                chdir=configuration.source_directory,
-                backend_config=configuration.backend_config,
             )
             terraform.apply(
                 chdir=configuration.source_directory,
