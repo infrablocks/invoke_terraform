@@ -33,7 +33,23 @@ class TestTaskFactory:
 
         assert collection.tasks["plan"] is not None
 
-    def test_plan_uses_workspace(self):
+    def test_plan_does_not_use_workspace_when_not_set(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory()
+        task_factory._terraformFactory = TerraformFactory(terraform)
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = "/some/path"
+            configuration.workspace = None
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        plan: Task = cast(Task, collection.tasks["plan"])
+
+        plan(Context())
+
+        terraform.select_workspace.assert_not_called()
+
+    def test_plan_uses_workspace_when_set(self):
         terraform = Mock(spec=tf.Terraform)
         task_factory = TaskFactory()
         task_factory._terraformFactory = TerraformFactory(terraform)
@@ -53,6 +69,25 @@ class TestTaskFactory:
             workspace, chdir=source_directory, or_create=True
         )
 
+    def test_plan_initialises_with_reconfigure(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory()
+        task_factory._terraformFactory = TerraformFactory(terraform)
+        source_directory = "/some/path"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.init_configuration.reconfigure = True
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        plan: Task = cast(Task, collection.tasks["plan"])
+
+        plan(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory, backend_config={}, reconfigure=True
+        )
+
     def test_plan_invokes_init_and_plan(self):
         terraform = Mock(spec=tf.Terraform)
         task_factory = TaskFactory()
@@ -64,7 +99,7 @@ class TestTaskFactory:
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
-            configuration.backend_config = backend_config
+            configuration.init_configuration.backend_config = backend_config
 
         collection = task_factory.create("collection", [], pre_task_function)
         plan: Task = cast(Task, collection.tasks["plan"])
@@ -72,7 +107,9 @@ class TestTaskFactory:
         plan(Context())
 
         terraform.init.assert_called_once_with(
-            chdir=source_directory, backend_config=backend_config
+            chdir=source_directory,
+            backend_config=backend_config,
+            reconfigure=False,
         )
         terraform.plan.assert_called_once_with(
             chdir=source_directory, vars=variables
@@ -98,7 +135,7 @@ class TestTaskFactory:
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
-            configuration.backend_config = backend_config
+            configuration.init_configuration.backend_config = backend_config
 
         collection = task_factory.create("collection", [], pre_task_function)
         apply: Task = cast(Task, collection.tasks["apply"])
@@ -106,7 +143,9 @@ class TestTaskFactory:
         apply(Context())
 
         terraform.init.assert_called_once_with(
-            chdir=source_directory, backend_config=backend_config
+            chdir=source_directory,
+            backend_config=backend_config,
+            reconfigure=False,
         )
         terraform.apply.assert_called_once_with(
             chdir=source_directory, vars=variables

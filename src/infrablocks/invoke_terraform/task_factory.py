@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Optional
 
 from invoke.collection import Collection
 from invoke.context import Context
@@ -10,19 +10,27 @@ from infrablocks.invoke_terraform.terraform_factory import TerraformFactory
 
 
 @dataclass
+class InitConfiguration:
+    backend_config: tf.BackendConfig
+    reconfigure: bool
+
+
+@dataclass
 class Configuration:
     source_directory: str
-    backend_config: tf.BackendConfig
     variables: tf.Variables
-    workspace: str
+    workspace: Optional[str]
+    init_configuration: InitConfiguration
 
     @staticmethod
     def create_empty():
         return Configuration(
             source_directory="",
-            backend_config={},
             variables={},
-            workspace="default",
+            workspace=None,
+            init_configuration=InitConfiguration(
+                backend_config={}, reconfigure=False
+            ),
         )
 
 
@@ -59,21 +67,8 @@ class TaskFactory:
         pre_task_function: PreTaskFunction,
     ) -> invoke_factory.BodyCallable[None]:
         def plan(context: Context, arguments: invoke_factory.Arguments):
-            configuration = Configuration.create_empty()
-            pre_task_function(
-                context,
-                arguments,
-                configuration,
-            )
-            terraform = self._terraformFactory.build(context)
-            terraform.init(
-                chdir=configuration.source_directory,
-                backend_config=configuration.backend_config,
-            )
-            terraform.select_workspace(
-                configuration.workspace,
-                chdir=configuration.source_directory,
-                or_create=True,
+            (terraform, configuration) = self._pre_command_setup(
+                pre_task_function, context, arguments
             )
             terraform.plan(
                 chdir=configuration.source_directory,
@@ -87,21 +82,8 @@ class TaskFactory:
         pre_task_function: PreTaskFunction,
     ) -> invoke_factory.BodyCallable[None]:
         def apply(context: Context, arguments: invoke_factory.Arguments):
-            configuration = Configuration.create_empty()
-            pre_task_function(
-                context,
-                arguments,
-                configuration,
-            )
-            terraform = self._terraformFactory.build(context)
-            terraform.init(
-                chdir=configuration.source_directory,
-                backend_config=configuration.backend_config,
-            )
-            terraform.select_workspace(
-                configuration.workspace,
-                chdir=configuration.source_directory,
-                or_create=True,
+            (terraform, configuration) = self._pre_command_setup(
+                pre_task_function, context, arguments
             )
             terraform.apply(
                 chdir=configuration.source_directory,
@@ -109,3 +91,31 @@ class TaskFactory:
             )
 
         return apply
+
+    def _pre_command_setup(
+        self,
+        pre_task_function: PreTaskFunction,
+        context: Context,
+        arguments: invoke_factory.Arguments,
+    ) -> tuple[tf.Terraform, Configuration]:
+        configuration = Configuration.create_empty()
+        pre_task_function(
+            context,
+            arguments,
+            configuration,
+        )
+        terraform = self._terraformFactory.build(context)
+        terraform.init(
+            chdir=configuration.source_directory,
+            backend_config=configuration.init_configuration.backend_config,
+            reconfigure=configuration.init_configuration.reconfigure,
+        )
+
+        if configuration.workspace is not None:
+            terraform.select_workspace(
+                configuration.workspace,
+                chdir=configuration.source_directory,
+                or_create=True,
+            )
+
+        return terraform, configuration

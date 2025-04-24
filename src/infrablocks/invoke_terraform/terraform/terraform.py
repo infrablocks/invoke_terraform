@@ -18,6 +18,7 @@ class Terraform:
         self,
         chdir: Optional[str] = None,
         backend_config: Optional[BackendConfig] = {},
+        reconfigure: Optional[bool] = False,
     ):
         base_command = self._build_base_command(chdir)
         command = (
@@ -25,6 +26,10 @@ class Terraform:
             + ["init"]
             + self._build_backend_config(backend_config)
         )
+
+        if reconfigure:
+            command = command + ["-reconfigure"]
+
         self._executor.execute(command)
 
     def plan(

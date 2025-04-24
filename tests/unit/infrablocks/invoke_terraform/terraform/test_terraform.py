@@ -55,6 +55,16 @@ class TestTerraform:
             ["terraform", "init", "-backend-config=/some/config.tfvars"]
         )
 
+    def test_init_executes_with_reconfigure(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.init(reconfigure=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "init", "-reconfigure"]
+        )
+
     def test_plan_executes(self):
         executor = Mock(spec=Executor)
         terraform = Terraform(executor)
