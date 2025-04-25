@@ -123,6 +123,16 @@ class TestTerraform:
             ["terraform", "apply", '-var="foo=1"']
         )
 
+    def test_apply_executes_with_autoapprove(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.apply(autoapprove=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", "-autoapprove"]
+        )
+
     def test_select_workspace_executes(self):
         executor = Mock(spec=Executor)
         terraform = Terraform(executor)

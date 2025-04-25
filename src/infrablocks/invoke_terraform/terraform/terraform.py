@@ -41,10 +41,19 @@ class Terraform:
         self._executor.execute(command)
 
     def apply(
-        self, chdir: Optional[str] = None, vars: Optional[Variables] = {}
+        self,
+        chdir: Optional[str] = None,
+        vars: Optional[Variables] = {},
+        autoapprove: bool = False,
     ):
         base_command = self._build_base_command(chdir)
-        command = base_command + ["apply"] + self._build_vars(vars)
+        autoapprove_flag = ["-autoapprove"] if autoapprove else []
+        command = (
+            base_command
+            + ["apply"]
+            + autoapprove_flag
+            + self._build_vars(vars)
+        )
 
         self._executor.execute(command)
 
