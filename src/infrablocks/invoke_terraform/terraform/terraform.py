@@ -47,7 +47,7 @@ class Terraform:
         autoapprove: bool = False,
     ):
         base_command = self._build_base_command(chdir)
-        autoapprove_flag = ["-autoapprove"] if autoapprove else []
+        autoapprove_flag = ["-auto-approve"] if autoapprove else []
         command = (
             base_command
             + ["apply"]

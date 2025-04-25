@@ -130,7 +130,7 @@ class TestTerraform:
         terraform.apply(autoapprove=True)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", "-autoapprove"]
+            ["terraform", "apply", "-auto-approve"]
         )
 
     def test_select_workspace_executes(self):
