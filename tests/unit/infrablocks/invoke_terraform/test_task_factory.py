@@ -148,7 +148,7 @@ class TestTaskFactory:
             reconfigure=False,
         )
         terraform.apply.assert_called_once_with(
-            chdir=source_directory, vars=variables
+            chdir=source_directory, vars=variables, autoapprove=True
         )
 
     def test_apply_uses_workspace(self):
