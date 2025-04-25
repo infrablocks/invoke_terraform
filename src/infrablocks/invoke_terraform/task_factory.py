@@ -21,7 +21,7 @@ class Configuration:
     variables: tf.Variables
     workspace: Optional[str]
     init_configuration: InitConfiguration
-    auto_approve: bool = False
+    auto_approve: bool = True
 
     @staticmethod
     def create_empty():
