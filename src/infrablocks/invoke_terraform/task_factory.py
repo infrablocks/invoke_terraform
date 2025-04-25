@@ -21,6 +21,7 @@ class Configuration:
     variables: tf.Variables
     workspace: Optional[str]
     init_configuration: InitConfiguration
+    auto_approve: bool = False
 
     @staticmethod
     def create_empty():
@@ -88,6 +89,7 @@ class TaskFactory:
             terraform.apply(
                 chdir=configuration.source_directory,
                 vars=configuration.variables,
+                autoapprove=configuration.auto_approve,
             )
 
         return apply
