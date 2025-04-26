@@ -6,6 +6,7 @@ from invoke.context import Context
 
 import infrablocks.invoke_factory as invoke_factory
 import infrablocks.invoke_terraform.terraform as tf
+from infrablocks.invoke_terraform.terraform.terraform import Environment
 from infrablocks.invoke_terraform.terraform_factory import TerraformFactory
 
 
@@ -21,6 +22,7 @@ class Configuration:
     variables: tf.Variables
     workspace: Optional[str]
     init_configuration: InitConfiguration
+    environment: Optional[Environment] = None
     auto_approve: bool = True
 
     @staticmethod
@@ -32,6 +34,7 @@ class Configuration:
             init_configuration=InitConfiguration(
                 backend_config={}, reconfigure=False
             ),
+            environment={},
         )
 
 
@@ -74,6 +77,7 @@ class TaskFactory:
             terraform.plan(
                 chdir=configuration.source_directory,
                 vars=configuration.variables,
+                environment=configuration.environment,
             )
 
         return plan
@@ -90,6 +94,7 @@ class TaskFactory:
                 chdir=configuration.source_directory,
                 vars=configuration.variables,
                 autoapprove=configuration.auto_approve,
+                environment=configuration.environment,
             )
 
         return apply
@@ -111,6 +116,7 @@ class TaskFactory:
             chdir=configuration.source_directory,
             backend_config=configuration.init_configuration.backend_config,
             reconfigure=configuration.init_configuration.reconfigure,
+            environment=configuration.environment,
         )
 
         if configuration.workspace is not None:
@@ -118,6 +124,7 @@ class TaskFactory:
                 configuration.workspace,
                 chdir=configuration.source_directory,
                 or_create=True,
+                environment=configuration.environment,
             )
 
         return terraform, configuration

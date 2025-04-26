@@ -66,7 +66,7 @@ class TestTaskFactory:
         plan(Context())
 
         terraform.select_workspace.assert_called_once_with(
-            workspace, chdir=source_directory, or_create=True
+            workspace, chdir=source_directory, or_create=True, environment={}
         )
 
     def test_plan_initialises_with_reconfigure(self):
@@ -85,7 +85,10 @@ class TestTaskFactory:
         plan(Context())
 
         terraform.init.assert_called_once_with(
-            chdir=source_directory, backend_config={}, reconfigure=True
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=True,
+            environment={},
         )
 
     def test_plan_invokes_init_and_plan(self):
@@ -110,9 +113,46 @@ class TestTaskFactory:
             chdir=source_directory,
             backend_config=backend_config,
             reconfigure=False,
+            environment={},
         )
         terraform.plan.assert_called_once_with(
-            chdir=source_directory, vars=variables
+            chdir=source_directory, vars=variables, environment={}
+        )
+
+    def test_plan_uses_environment_in_all_commands_when_set(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory()
+        task_factory._terraformFactory = TerraformFactory(terraform)
+        source_directory = "/some/path"
+        environment = {"ENV_VAR": "value"}
+        workspace = "workspace"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.environment = environment
+            configuration.workspace = workspace
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        plan: Task = cast(Task, collection.tasks["plan"])
+
+        plan(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=False,
+            environment=environment,
+        )
+
+        terraform.select_workspace.assert_called_once_with(
+            "workspace",
+            chdir=source_directory,
+            or_create=True,
+            environment=environment,
+        )
+
+        terraform.plan.assert_called_once_with(
+            chdir=source_directory, vars={}, environment=environment
         )
 
     def test_creates_apply_task(self):
@@ -146,9 +186,13 @@ class TestTaskFactory:
             chdir=source_directory,
             backend_config=backend_config,
             reconfigure=False,
+            environment={},
         )
         terraform.apply.assert_called_once_with(
-            chdir=source_directory, vars=variables, autoapprove=True
+            chdir=source_directory,
+            vars=variables,
+            autoapprove=True,
+            environment={},
         )
 
     def test_apply_uses_workspace(self):
@@ -168,5 +212,44 @@ class TestTaskFactory:
         apply(Context())
 
         terraform.select_workspace.assert_called_once_with(
-            workspace, chdir=source_directory, or_create=True
+            workspace, chdir=source_directory, or_create=True, environment={}
+        )
+
+    def test_apply_uses_environment_in_all_commands_when_set(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory()
+        task_factory._terraformFactory = TerraformFactory(terraform)
+        source_directory = "/some/path"
+        environment = {"ENV_VAR": "value"}
+        workspace = "workspace"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.environment = environment
+            configuration.workspace = workspace
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        apply: Task = cast(Task, collection.tasks["apply"])
+
+        apply(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=False,
+            environment=environment,
+        )
+
+        terraform.select_workspace.assert_called_once_with(
+            "workspace",
+            chdir=source_directory,
+            or_create=True,
+            environment=environment,
+        )
+
+        terraform.apply.assert_called_once_with(
+            chdir=source_directory,
+            vars={},
+            autoapprove=True,
+            environment=environment,
         )

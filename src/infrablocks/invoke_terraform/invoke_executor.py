@@ -1,13 +1,16 @@
-from typing import Iterable
+from typing import Iterable, Optional
 
 from invoke.context import Context
 
 import infrablocks.invoke_terraform.terraform as tf
+from infrablocks.invoke_terraform.terraform.terraform import Environment
 
 
 class InvokeExecutor(tf.Executor):
     def __init__(self, context: Context):
         self._context = context
 
-    def execute(self, command: Iterable[str]) -> None:
-        self._context.run(" ".join(command))
+    def execute(
+        self, command: Iterable[str], env: Optional[Environment] = None
+    ) -> None:
+        self._context.run(" ".join(command), env=(env or {}))

@@ -3,10 +3,13 @@ from typing import Dict, Iterable, List, Optional, Union
 type ConfigurationValue = Union[bool, int, float, str, None]
 type Variables = Dict[str, ConfigurationValue]
 type BackendConfig = Union[str, Dict[str, ConfigurationValue]]
+type Environment = Dict[str, str]
 
 
 class Executor:
-    def execute(self, command: Iterable[str]) -> None:
+    def execute(
+        self, command: Iterable[str], env: Optional[Environment]
+    ) -> None:
         raise Exception("NotImplementedException")
 
 
@@ -19,6 +22,7 @@ class Terraform:
         chdir: Optional[str] = None,
         backend_config: Optional[BackendConfig] = {},
         reconfigure: Optional[bool] = False,
+        environment: Optional[Environment] = None,
     ):
         base_command = self._build_base_command(chdir)
         command = (
@@ -30,21 +34,25 @@ class Terraform:
         if reconfigure:
             command = command + ["-reconfigure"]
 
-        self._executor.execute(command)
+        self._executor.execute(command, env=environment)
 
     def plan(
-        self, chdir: Optional[str] = None, vars: Optional[Variables] = {}
+        self,
+        chdir: Optional[str] = None,
+        vars: Optional[Variables] = {},
+        environment: Optional[Environment] = None,
     ):
         base_command = self._build_base_command(chdir)
         command = base_command + ["plan"] + self._build_vars(vars)
 
-        self._executor.execute(command)
+        self._executor.execute(command, env=environment)
 
     def apply(
         self,
         chdir: Optional[str] = None,
         vars: Optional[Variables] = {},
         autoapprove: bool = False,
+        environment: Optional[Environment] = None,
     ):
         base_command = self._build_base_command(chdir)
         autoapprove_flag = ["-auto-approve"] if autoapprove else []
@@ -55,13 +63,14 @@ class Terraform:
             + self._build_vars(vars)
         )
 
-        self._executor.execute(command)
+        self._executor.execute(command, env=environment)
 
     def select_workspace(
         self,
         workspace: str,
         chdir: Optional[str] = None,
         or_create: bool = False,
+        environment: Optional[Environment] = None,
     ):
         base_command = self._build_base_command(chdir)
         command = base_command + ["workspace", "select"]
@@ -71,7 +80,7 @@ class Terraform:
 
         command = command + [workspace]
 
-        self._executor.execute(command)
+        self._executor.execute(command, env=environment)
 
     @staticmethod
     def _build_base_command(chdir: Optional[str]) -> List[str]:
