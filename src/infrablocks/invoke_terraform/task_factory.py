@@ -1,5 +1,5 @@
+from collections.abc import Callable
 from dataclasses import dataclass
-from typing import Callable, Optional
 
 from invoke.collection import Collection
 from invoke.context import Context
@@ -20,9 +20,9 @@ class InitConfiguration:
 class Configuration:
     source_directory: str
     variables: tf.Variables
-    workspace: Optional[str]
+    workspace: str | None
     init_configuration: InitConfiguration
-    environment: Optional[Environment] = None
+    environment: Environment | None = None
     auto_approve: bool = True
 
     @staticmethod
@@ -44,8 +44,10 @@ type PreTaskFunction = Callable[
 
 
 class TaskFactory:
-    def __init__(self):
-        self._terraformFactory = TerraformFactory()
+    def __init__(
+        self, terraform_factory: TerraformFactory = TerraformFactory()
+    ):
+        self._terraform_factory = terraform_factory
 
     def create(
         self,
@@ -111,7 +113,7 @@ class TaskFactory:
             arguments,
             configuration,
         )
-        terraform = self._terraformFactory.build(context)
+        terraform = self._terraform_factory.build(context)
         terraform.init(
             chdir=configuration.source_directory,
             backend_config=configuration.init_configuration.backend_config,

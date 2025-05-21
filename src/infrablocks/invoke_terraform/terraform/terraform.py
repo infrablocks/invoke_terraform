@@ -1,15 +1,13 @@
-from typing import Dict, Iterable, List, Optional, Union
+from collections.abc import Mapping, Sequence
 
-type ConfigurationValue = Union[bool, int, float, str, None]
-type Variables = Dict[str, ConfigurationValue]
-type BackendConfig = Union[str, Dict[str, ConfigurationValue]]
-type Environment = Dict[str, str]
+type ConfigurationValue = bool | int | float | str | None
+type Variables = Mapping[str, ConfigurationValue]
+type BackendConfig = str | Mapping[str, ConfigurationValue]
+type Environment = Mapping[str, str]
 
 
 class Executor:
-    def execute(
-        self, command: Iterable[str], env: Optional[Environment]
-    ) -> None:
+    def execute(self, command: Sequence[str], env: Environment | None) -> None:
         raise Exception("NotImplementedException")
 
 
@@ -19,10 +17,10 @@ class Terraform:
 
     def init(
         self,
-        chdir: Optional[str] = None,
-        backend_config: Optional[BackendConfig] = {},
-        reconfigure: Optional[bool] = False,
-        environment: Optional[Environment] = None,
+        chdir: str | None = None,
+        backend_config: BackendConfig | None = None,
+        reconfigure: bool = False,
+        environment: Environment | None = None,
     ):
         base_command = self._build_base_command(chdir)
         command = (
@@ -38,9 +36,9 @@ class Terraform:
 
     def plan(
         self,
-        chdir: Optional[str] = None,
-        vars: Optional[Variables] = {},
-        environment: Optional[Environment] = None,
+        chdir: str | None = None,
+        vars: Variables | None = None,
+        environment: Environment | None = None,
     ):
         base_command = self._build_base_command(chdir)
         command = base_command + ["plan"] + self._build_vars(vars)
@@ -49,10 +47,10 @@ class Terraform:
 
     def apply(
         self,
-        chdir: Optional[str] = None,
-        vars: Optional[Variables] = {},
+        chdir: str | None = None,
+        vars: Variables | None = None,
         autoapprove: bool = False,
-        environment: Optional[Environment] = None,
+        environment: Environment | None = None,
     ):
         base_command = self._build_base_command(chdir)
         autoapprove_flag = ["-auto-approve"] if autoapprove else []
@@ -68,9 +66,9 @@ class Terraform:
     def select_workspace(
         self,
         workspace: str,
-        chdir: Optional[str] = None,
+        chdir: str | None = None,
         or_create: bool = False,
-        environment: Optional[Environment] = None,
+        environment: Environment | None = None,
     ):
         base_command = self._build_base_command(chdir)
         command = base_command + ["workspace", "select"]
@@ -83,7 +81,7 @@ class Terraform:
         self._executor.execute(command, env=environment)
 
     @staticmethod
-    def _build_base_command(chdir: Optional[str]) -> List[str]:
+    def _build_base_command(chdir: str | None) -> list[str]:
         command = ["terraform"]
 
         if chdir is not None:
@@ -91,8 +89,8 @@ class Terraform:
 
         return command
 
-    def _build_vars(self, variables: Optional[Variables]) -> List[str]:
-        if not variables:
+    def _build_vars(self, variables: Variables | None) -> list[str]:
+        if variables is None:
             return []
 
         return [
@@ -118,9 +116,9 @@ class Terraform:
         )
 
     def _build_backend_config(
-        self, backend_config: Optional[BackendConfig]
-    ) -> List[str]:
-        if not backend_config:
+        self, backend_config: BackendConfig | None
+    ) -> list[str]:
+        if backend_config is None:
             return []
 
         if isinstance(backend_config, str):

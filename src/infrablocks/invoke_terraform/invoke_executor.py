@@ -1,4 +1,4 @@
-from typing import Iterable, Optional
+from typing import Iterable
 
 from invoke.context import Context
 
@@ -11,6 +11,6 @@ class InvokeExecutor(tf.Executor):
         self._context = context
 
     def execute(
-        self, command: Iterable[str], env: Optional[Environment] = None
+        self, command: Iterable[str], env: Environment | None = None
     ) -> None:
         self._context.run(" ".join(command), env=(env or {}))

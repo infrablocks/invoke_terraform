@@ -35,8 +35,9 @@ class TestTaskFactory:
 
     def test_plan_does_not_use_workspace_when_not_set(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
 
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = "/some/path"
@@ -51,8 +52,9 @@ class TestTaskFactory:
 
     def test_plan_uses_workspace_when_set(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         workspace = "workspace"
         source_directory = "/some/path"
 
@@ -71,8 +73,9 @@ class TestTaskFactory:
 
     def test_plan_initialises_with_reconfigure(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         source_directory = "/some/path"
 
         def pre_task_function(_context, _, configuration: Configuration):
@@ -93,8 +96,9 @@ class TestTaskFactory:
 
     def test_plan_invokes_init_and_plan(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         source_directory = "/some/path"
         variables: tf.Variables = {"foo": 1}
         backend_config: tf.BackendConfig = {"path": "state_file.tfstate"}
@@ -121,8 +125,9 @@ class TestTaskFactory:
 
     def test_plan_uses_environment_in_all_commands_when_set(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         source_directory = "/some/path"
         environment = {"ENV_VAR": "value"}
         workspace = "workspace"
@@ -166,8 +171,9 @@ class TestTaskFactory:
 
     def test_apply_invokes_init_and_apply(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         source_directory = "/some/path"
         variables: tf.Variables = {"foo": 1}
         backend_config: tf.BackendConfig = {"path": "state_file.tfstate"}
@@ -197,8 +203,9 @@ class TestTaskFactory:
 
     def test_apply_uses_workspace(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         workspace = "workspace"
         source_directory = "/some/path"
 
@@ -217,8 +224,9 @@ class TestTaskFactory:
 
     def test_apply_uses_environment_in_all_commands_when_set(self):
         terraform = Mock(spec=tf.Terraform)
-        task_factory = TaskFactory()
-        task_factory._terraformFactory = TerraformFactory(terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
         source_directory = "/some/path"
         environment = {"ENV_VAR": "value"}
         workspace = "workspace"
