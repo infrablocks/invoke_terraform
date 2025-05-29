@@ -141,7 +141,18 @@ class TestTerraform:
             ["terraform", "-chdir=/some/dir", "apply"], env=None
         )
 
-    def test_apply_executes_with_vars(self):
+    def test_apply_executes_with_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": "bar"}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=bar"'], env=None
+        )
+
+    def test_apply_executes_with_integer_var(self):
         executor = Mock(spec=Executor)
         terraform = Terraform(executor)
         variables: Variables = {"foo": 1}
@@ -150,6 +161,151 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "apply", '-var="foo=1"'], env=None
+        )
+
+    def test_apply_executes_with_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": 1.2}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=1.2"'], env=None
+        )
+
+    def test_apply_executes_with_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": True}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=true"'], env=None
+        )
+
+    def test_apply_executes_with_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": None}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=null"'], env=None
+        )
+
+    def test_apply_executes_with_list_of_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": ["ex", "why", "zed"]}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=["ex", "why", "zed"]"'], env=None
+        )
+
+    def test_apply_executes_with_list_of_integer_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [1, 2, 3]}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=[1, 2, 3]"'], env=None
+        )
+
+    def test_apply_executes_with_list_of_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [1.1, 2.2, 3.3]}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=[1.1, 2.2, 3.3]"'], env=None
+        )
+
+    def test_apply_executes_with_list_of_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [True, False, True]}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=[true, false, true]"'], env=None
+        )
+
+    def test_apply_executes_with_list_of_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [None, None, None]}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo=[null, null, null]"'], env=None
+        )
+
+    def test_apply_executes_with_mapping_of_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": "x", "b": "y"}}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo={"a": "x", "b": "y"}"'], env=None
+        )
+
+    def test_apply_executes_with_mapping_of_integer_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": 1, "b": 2}}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo={"a": 1, "b": 2}"'], env=None
+        )
+
+    def test_apply_executes_with_mapping_of_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": 1.1, "b": 2.2}}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo={"a": 1.1, "b": 2.2}"'], env=None
+        )
+
+    def test_apply_executes_with_mapping_of_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": True, "b": False}}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo={"a": true, "b": false}"'],
+            env=None,
+        )
+
+    def test_apply_executes_with_mapping_of_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": True, "b": False}}
+
+        terraform.apply(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "apply", '-var="foo={"a": true, "b": false}"'],
+            env=None,
         )
 
     def test_apply_executes_with_autoapprove(self):

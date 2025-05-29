@@ -1,6 +1,15 @@
+import json
 from collections.abc import Mapping, Sequence
 
-type ConfigurationValue = bool | int | float | str | None
+type ConfigurationValue = (
+    bool
+    | int
+    | float
+    | str
+    | None
+    | Sequence[ConfigurationValue]
+    | Mapping[str, ConfigurationValue]
+)
 type Variables = Mapping[str, ConfigurationValue]
 type BackendConfig = str | Mapping[str, ConfigurationValue]
 type Environment = Mapping[str, str]
@@ -104,16 +113,12 @@ class Terraform:
     ) -> str:
         if isinstance(value, bool):
             return f'{option_key}="{key}={str(value).lower()}"'
-        elif isinstance(value, (int, float)):
-            return f'{option_key}="{key}={value}"'
         elif isinstance(value, str):
             return f'{option_key}="{key}={value}"'
         elif value is None:
             return f'{option_key}="{key}=null"'
-
-        raise Exception(
-            f"variable with value of type {type(value)} is not supported"
-        )
+        else:
+            return f'{option_key}="{key}={json.dumps(value)}"'
 
     def _build_backend_config(
         self, backend_config: BackendConfig | None
