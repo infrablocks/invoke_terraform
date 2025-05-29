@@ -204,7 +204,12 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=["ex", "why", "zed"]"'], env=None
+            [
+                "terraform",
+                "apply",
+                '-var="foo=[\\"ex\\", \\"why\\", \\"zed\\"]"',
+            ],
+            env=None,
         )
 
     def test_apply_executes_with_list_of_integer_var(self):
@@ -259,7 +264,12 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo={"a": "x", "b": "y"}"'], env=None
+            [
+                "terraform",
+                "apply",
+                '-var="foo={\\"a\\": \\"x\\", \\"b\\": \\"y\\"}"',
+            ],
+            env=None,
         )
 
     def test_apply_executes_with_mapping_of_integer_var(self):
@@ -270,7 +280,8 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo={"a": 1, "b": 2}"'], env=None
+            ["terraform", "apply", '-var="foo={\\"a\\": 1, \\"b\\": 2}"'],
+            env=None,
         )
 
     def test_apply_executes_with_mapping_of_float_var(self):
@@ -281,7 +292,8 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo={"a": 1.1, "b": 2.2}"'], env=None
+            ["terraform", "apply", '-var="foo={\\"a\\": 1.1, \\"b\\": 2.2}"'],
+            env=None,
         )
 
     def test_apply_executes_with_mapping_of_boolean_var(self):
@@ -292,7 +304,11 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo={"a": true, "b": false}"'],
+            [
+                "terraform",
+                "apply",
+                '-var="foo={\\"a\\": true, \\"b\\": false}"',
+            ],
             env=None,
         )
 
@@ -304,7 +320,11 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo={"a": true, "b": false}"'],
+            [
+                "terraform",
+                "apply",
+                '-var="foo={\\"a\\": true, \\"b\\": false}"',
+            ],
             env=None,
         )
 

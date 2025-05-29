@@ -118,7 +118,10 @@ class Terraform:
         elif value is None:
             return f'{option_key}="{key}=null"'
         else:
-            return f'{option_key}="{key}={json.dumps(value)}"'
+            jsonified_value = (
+                json.dumps(value).replace("\\", "\\\\").replace('"', r"\"")
+            )
+            return f'{option_key}="{key}={jsonified_value}"'
 
     def _build_backend_config(
         self, backend_config: BackendConfig | None
