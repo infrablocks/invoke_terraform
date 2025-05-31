@@ -1,5 +1,7 @@
 import json
 from collections.abc import Mapping, Sequence
+from tempfile import TemporaryFile
+from typing import IO, Literal
 
 type ConfigurationValue = (
     bool
@@ -13,11 +15,37 @@ type ConfigurationValue = (
 type Variables = Mapping[str, ConfigurationValue]
 type BackendConfig = str | Mapping[str, ConfigurationValue]
 type Environment = Mapping[str, str]
+type StreamName = Literal["stdout"] | Literal["stderr"]
+type StreamNames = set[StreamName]
+
+
+class Result:
+    def __init__(self, stdout: IO[str] | None, stderr: IO[str] | None):
+        self.stdout = stdout
+        self.stderr = stderr
 
 
 class Executor:
-    def execute(self, command: Sequence[str], env: Environment | None) -> None:
-        raise Exception("NotImplementedException")
+    def execute(
+        self,
+        command: Sequence[str],
+        environment: Environment | None = None,
+        stdout: IO[str] | None = None,
+        stderr: IO[str] | None = None,
+    ) -> None:
+        raise NotImplementedError
+
+
+def _captures(capture: StreamNames | None, stream: StreamName) -> bool:
+    return capture is not None and stream in capture
+
+
+def _capture_stream(
+    capture: StreamNames | None, stream: StreamName
+) -> IO[str] | None:
+    if _captures(capture, stream):
+        return TemporaryFile(mode="w+t")
+    return None
 
 
 class Terraform:
@@ -41,7 +69,7 @@ class Terraform:
         if reconfigure:
             command = command + ["-reconfigure"]
 
-        self._executor.execute(command, env=environment)
+        self._executor.execute(command, environment=environment)
 
     def plan(
         self,
@@ -52,7 +80,7 @@ class Terraform:
         base_command = self._build_base_command(chdir)
         command = base_command + ["plan"] + self._build_vars(vars)
 
-        self._executor.execute(command, env=environment)
+        self._executor.execute(command, environment=environment)
 
     def apply(
         self,
@@ -70,7 +98,7 @@ class Terraform:
             + self._build_vars(vars)
         )
 
-        self._executor.execute(command, env=environment)
+        self._executor.execute(command, environment=environment)
 
     def select_workspace(
         self,
@@ -87,7 +115,43 @@ class Terraform:
 
         command = command + [workspace]
 
-        self._executor.execute(command, env=environment)
+        self._executor.execute(command, environment=environment)
+
+    def output(
+        self,
+        chdir: str | None = None,
+        name: str | None = None,
+        raw: bool = False,
+        json: bool = False,
+        environment: Environment | None = None,
+        capture: StreamNames | None = None,
+    ) -> Result:
+        base_command = self._build_base_command(chdir)
+        command = base_command + ["output"]
+
+        if raw:
+            command = command + ["-raw"]
+        if json:
+            command = command + ["-json"]
+        if name is not None:
+            command = command + [name]
+
+        stdout = _capture_stream(capture, "stdout")
+        stderr = _capture_stream(capture, "stderr")
+
+        self._executor.execute(
+            command,
+            environment=environment,
+            stdout=stdout,
+            stderr=stderr,
+        )
+
+        if stdout is not None:
+            stdout.seek(0)
+        if stderr is not None:
+            stderr.seek(0)
+
+        return Result(stdout, stderr)
 
     @staticmethod
     def _build_base_command(chdir: str | None) -> list[str]:

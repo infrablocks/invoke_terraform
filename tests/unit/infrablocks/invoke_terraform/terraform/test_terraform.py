@@ -1,7 +1,10 @@
+from collections.abc import Sequence
+from typing import IO
 from unittest.mock import Mock
 
 from infrablocks.invoke_terraform.terraform import (
     BackendConfig,
+    Environment,
     Executor,
     Terraform,
     Variables,
@@ -22,7 +25,7 @@ class TestTerraform:
         terraform.init()
 
         executor.execute.assert_called_once_with(
-            ["terraform", "init"], env=None
+            ["terraform", "init"], environment=None
         )
 
     def test_init_executes_with_chdir(self):
@@ -32,7 +35,7 @@ class TestTerraform:
         terraform.init(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "-chdir=/some/dir", "init"], env=None
+            ["terraform", "-chdir=/some/dir", "init"], environment=None
         )
 
     def test_init_executes_with_backend_config_dictionary(self):
@@ -43,7 +46,7 @@ class TestTerraform:
         terraform.init(backend_config=backend_config)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "init", '-backend-config="foo=1"'], env=None
+            ["terraform", "init", '-backend-config="foo=1"'], environment=None
         )
 
     def test_init_executes_with_backend_config_path(self):
@@ -55,7 +58,7 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "init", "-backend-config=/some/config.tfvars"],
-            env=None,
+            environment=None,
         )
 
     def test_init_executes_with_reconfigure(self):
@@ -65,7 +68,7 @@ class TestTerraform:
         terraform.init(reconfigure=True)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "init", "-reconfigure"], env=None
+            ["terraform", "init", "-reconfigure"], environment=None
         )
 
     def test_init_executes_with_environment(self):
@@ -76,7 +79,7 @@ class TestTerraform:
         terraform.init(environment=environment)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "init"], env=environment
+            ["terraform", "init"], environment=environment
         )
 
     def test_plan_executes(self):
@@ -86,7 +89,7 @@ class TestTerraform:
         terraform.plan()
 
         executor.execute.assert_called_once_with(
-            ["terraform", "plan"], env=None
+            ["terraform", "plan"], environment=None
         )
 
     def test_plan_executes_with_chdir(self):
@@ -96,7 +99,7 @@ class TestTerraform:
         terraform.plan(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "-chdir=/some/dir", "plan"], env=None
+            ["terraform", "-chdir=/some/dir", "plan"], environment=None
         )
 
     def test_plan_executes_with_vars(self):
@@ -107,7 +110,7 @@ class TestTerraform:
         terraform.plan(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "plan", '-var="foo=1"'], env=None
+            ["terraform", "plan", '-var="foo=1"'], environment=None
         )
 
     def test_plan_executes_with_environment(self):
@@ -118,8 +121,132 @@ class TestTerraform:
         terraform.plan(environment=environment)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "plan"], env=environment
+            ["terraform", "plan"], environment=environment
         )
+
+    def test_output_executes(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.output()
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "output"], environment=None, stdout=None, stderr=None
+        )
+
+    def test_output_executes_with_chdir(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.output(chdir="/some/dir")
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "-chdir=/some/dir", "output"],
+            environment=None,
+            stdout=None,
+            stderr=None,
+        )
+
+    def test_output_executes_with_environment(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        environment = {"ENV_VAR": "value"}
+
+        terraform.output(environment=environment)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "output"],
+            environment=environment,
+            stdout=None,
+            stderr=None,
+        )
+
+    def test_output_executes_with_json(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.output(json=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "output", "-json"],
+            environment=None,
+            stdout=None,
+            stderr=None,
+        )
+
+    def test_output_executes_with_raw(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.output(raw=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "output", "-raw"],
+            environment=None,
+            stdout=None,
+            stderr=None,
+        )
+
+    def test_output_executes_with_name(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.output(name="output_name")
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "output", "output_name"],
+            environment=None,
+            stdout=None,
+            stderr=None,
+        )
+
+    def test_output_captures_standard_output(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        def write_to_stdout(value: str):
+            def side_effect(
+                command: Sequence[str],
+                environment: Environment | None = None,
+                stdout: IO[str] | None = None,
+                stderr: IO[str] | None = None,
+            ):
+                if stdout:
+                    stdout.write(value)
+                return None
+
+            return side_effect
+
+        executor.execute.side_effect = write_to_stdout('"output_value"\n')
+
+        result = terraform.output(capture={"stdout"})
+
+        assert result.stdout is not None
+        assert result.stdout.read() == '"output_value"\n'
+
+    def test_output_captures_standard_error(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        def write_to_stderr(value: str):
+            def side_effect(
+                command: Sequence[str],
+                environment: Environment | None = None,
+                stdout: IO[str] | None = None,
+                stderr: IO[str] | None = None,
+            ):
+                if stderr:
+                    stderr.write(value)
+                return None
+
+            return side_effect
+
+        executor.execute.side_effect = write_to_stderr("Error!\n")
+
+        result = terraform.output(capture={"stderr"})
+
+        assert result.stderr is not None
+        assert result.stderr.read() == "Error!\n"
 
     def test_apply_executes(self):
         executor = Mock(spec=Executor)
@@ -128,7 +255,7 @@ class TestTerraform:
         terraform.apply()
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply"], env=None
+            ["terraform", "apply"], environment=None
         )
 
     def test_apply_executes_with_chdir(self):
@@ -138,7 +265,7 @@ class TestTerraform:
         terraform.apply(chdir="/some/dir")
 
         executor.execute.assert_called_once_with(
-            ["terraform", "-chdir=/some/dir", "apply"], env=None
+            ["terraform", "-chdir=/some/dir", "apply"], environment=None
         )
 
     def test_apply_executes_with_string_var(self):
@@ -149,7 +276,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=bar"'], env=None
+            ["terraform", "apply", '-var="foo=bar"'], environment=None
         )
 
     def test_apply_executes_with_integer_var(self):
@@ -160,7 +287,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=1"'], env=None
+            ["terraform", "apply", '-var="foo=1"'], environment=None
         )
 
     def test_apply_executes_with_float_var(self):
@@ -171,7 +298,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=1.2"'], env=None
+            ["terraform", "apply", '-var="foo=1.2"'], environment=None
         )
 
     def test_apply_executes_with_boolean_var(self):
@@ -182,7 +309,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=true"'], env=None
+            ["terraform", "apply", '-var="foo=true"'], environment=None
         )
 
     def test_apply_executes_with_none_var(self):
@@ -193,7 +320,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=null"'], env=None
+            ["terraform", "apply", '-var="foo=null"'], environment=None
         )
 
     def test_apply_executes_with_list_of_string_var(self):
@@ -209,7 +336,7 @@ class TestTerraform:
                 "apply",
                 '-var="foo=[\\"ex\\", \\"why\\", \\"zed\\"]"',
             ],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_list_of_integer_var(self):
@@ -220,7 +347,7 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=[1, 2, 3]"'], env=None
+            ["terraform", "apply", '-var="foo=[1, 2, 3]"'], environment=None
         )
 
     def test_apply_executes_with_list_of_float_var(self):
@@ -231,7 +358,8 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=[1.1, 2.2, 3.3]"'], env=None
+            ["terraform", "apply", '-var="foo=[1.1, 2.2, 3.3]"'],
+            environment=None,
         )
 
     def test_apply_executes_with_list_of_boolean_var(self):
@@ -242,7 +370,8 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=[true, false, true]"'], env=None
+            ["terraform", "apply", '-var="foo=[true, false, true]"'],
+            environment=None,
         )
 
     def test_apply_executes_with_list_of_none_var(self):
@@ -253,7 +382,8 @@ class TestTerraform:
         terraform.apply(vars=variables)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", '-var="foo=[null, null, null]"'], env=None
+            ["terraform", "apply", '-var="foo=[null, null, null]"'],
+            environment=None,
         )
 
     def test_apply_executes_with_mapping_of_string_var(self):
@@ -269,7 +399,7 @@ class TestTerraform:
                 "apply",
                 '-var="foo={\\"a\\": \\"x\\", \\"b\\": \\"y\\"}"',
             ],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_mapping_of_integer_var(self):
@@ -281,7 +411,7 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "apply", '-var="foo={\\"a\\": 1, \\"b\\": 2}"'],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_mapping_of_float_var(self):
@@ -293,7 +423,7 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "apply", '-var="foo={\\"a\\": 1.1, \\"b\\": 2.2}"'],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_mapping_of_boolean_var(self):
@@ -309,7 +439,7 @@ class TestTerraform:
                 "apply",
                 '-var="foo={\\"a\\": true, \\"b\\": false}"',
             ],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_mapping_of_none_var(self):
@@ -325,7 +455,7 @@ class TestTerraform:
                 "apply",
                 '-var="foo={\\"a\\": true, \\"b\\": false}"',
             ],
-            env=None,
+            environment=None,
         )
 
     def test_apply_executes_with_autoapprove(self):
@@ -335,7 +465,7 @@ class TestTerraform:
         terraform.apply(autoapprove=True)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply", "-auto-approve"], env=None
+            ["terraform", "apply", "-auto-approve"], environment=None
         )
 
     def test_apply_executes_with_environment(self):
@@ -346,7 +476,7 @@ class TestTerraform:
         terraform.apply(environment=environment)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "apply"], env=environment
+            ["terraform", "apply"], environment=environment
         )
 
     def test_select_workspace_executes(self):
@@ -357,7 +487,7 @@ class TestTerraform:
         terraform.select_workspace(workspace)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "workspace", "select", workspace], env=None
+            ["terraform", "workspace", "select", workspace], environment=None
         )
 
     def test_select_workspace_executes_with_chdir(self):
@@ -375,7 +505,7 @@ class TestTerraform:
                 "select",
                 workspace,
             ],
-            env=None,
+            environment=None,
         )
 
     def test_select_workspace_executes_with_or_create(self):
@@ -387,7 +517,7 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "workspace", "select", "-or-create=true", workspace],
-            env=None,
+            environment=None,
         )
 
     def test_select_workspace_executes_with_environment(self):
@@ -399,5 +529,6 @@ class TestTerraform:
         terraform.select_workspace(workspace, environment=environment)
 
         executor.execute.assert_called_once_with(
-            ["terraform", "workspace", "select", workspace], env=environment
+            ["terraform", "workspace", "select", workspace],
+            environment=environment,
         )

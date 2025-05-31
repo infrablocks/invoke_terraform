@@ -16,6 +16,8 @@ class TestInvokeExecutor:
         context.run.assert_called_once_with(
             "some_command arg1 arg2",
             env={},
+            out_stream=None,
+            err_stream=None,
         )
 
     def test_run_invoked_with_env(self):
@@ -24,12 +26,14 @@ class TestInvokeExecutor:
         executor = InvokeExecutor(context)
 
         executor.execute(
-            ["some_command", "arg1", "arg2"], env={"ENV_VAR": "value"}
+            ["some_command", "arg1", "arg2"], environment={"ENV_VAR": "value"}
         )
 
         context.run.assert_called_once_with(
             "some_command arg1 arg2",
             env={"ENV_VAR": "value"},
+            out_stream=None,
+            err_stream=None,
         )
 
     def test_run_invoked_with_empty_env(self):
@@ -37,9 +41,11 @@ class TestInvokeExecutor:
 
         executor = InvokeExecutor(context)
 
-        executor.execute(["some_command", "arg1", "arg2"], env=None)
+        executor.execute(["some_command", "arg1", "arg2"], environment=None)
 
         context.run.assert_called_once_with(
             "some_command arg1 arg2",
             env={},
+            out_stream=None,
+            err_stream=None,
         )
