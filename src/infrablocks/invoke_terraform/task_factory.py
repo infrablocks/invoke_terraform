@@ -17,23 +17,34 @@ class InitConfiguration:
 
 
 @dataclass
+class OutputConfiguration:
+    json: bool
+
+
+@dataclass
 class Configuration:
+    init_configuration: InitConfiguration
+    output_configuration: OutputConfiguration
+
     source_directory: str
     variables: tf.Variables
     workspace: str | None
-    init_configuration: InitConfiguration
-    environment: Environment | None = None
     auto_approve: bool = True
+
+    capture_stdout: bool = False
+    environment: Environment | None = None
 
     @staticmethod
     def create_empty():
         return Configuration(
-            source_directory="",
-            variables={},
-            workspace=None,
             init_configuration=InitConfiguration(
                 backend_config={}, reconfigure=False
             ),
+            output_configuration=OutputConfiguration(json=False),
+            source_directory="",
+            variables={},
+            workspace=None,
+            capture_stdout=False,
             environment={},
         )
 
@@ -62,10 +73,15 @@ class TaskFactory:
         apply_task = invoke_factory.create_task(
             self._create_apply(pre_task_function), task_parameters
         )
+        output_task = invoke_factory.create_task(
+            self._create_output(pre_task_function), task_parameters
+        )
 
         # TODO: investigate type issue
         collection.add_task(plan_task)  # pyright: ignore[reportUnknownMemberType]
         collection.add_task(apply_task)  # pyright: ignore[reportUnknownMemberType]
+        collection.add_task(output_task)  # pyright: ignore[reportUnknownMemberType]
+
         return collection
 
     def _create_plan(
@@ -100,6 +116,35 @@ class TaskFactory:
             )
 
         return apply
+
+    def _create_output(
+        self, pre_task_function: PreTaskFunction
+    ) -> invoke_factory.BodyCallable[str | None]:
+        def output(
+            context: Context, arguments: invoke_factory.Arguments
+        ) -> str | None:
+            (terraform, configuration) = self._pre_command_setup(
+                pre_task_function, context, arguments
+            )
+
+            capture: tf.StreamNames | None = None
+            if configuration.capture_stdout:
+                capture = {"stdout"}
+
+            result = terraform.output(
+                chdir=configuration.source_directory,
+                capture=capture,
+                json=configuration.output_configuration.json,
+                environment=configuration.environment,
+            )
+
+            if configuration.capture_stdout and result.stdout is not None:
+                output = result.stdout.read()
+                return output.strip()
+
+            return None
+
+        return output
 
     def _pre_command_setup(
         self,

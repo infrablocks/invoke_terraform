@@ -20,7 +20,9 @@ type StreamNames = set[StreamName]
 
 
 class Result:
-    def __init__(self, stdout: IO[str] | None, stderr: IO[str] | None):
+    def __init__(
+        self, stdout: IO[str] | None = None, stderr: IO[str] | None = None
+    ):
         self.stdout = stdout
         self.stderr = stderr
 

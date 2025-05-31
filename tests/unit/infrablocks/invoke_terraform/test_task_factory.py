@@ -1,3 +1,4 @@
+from io import StringIO
 from typing import cast
 from unittest.mock import Mock
 
@@ -261,3 +262,150 @@ class TestTaskFactory:
             autoapprove=True,
             environment=environment,
         )
+
+    def test_creates_output_task(self):
+        pre_task_function_mock = Mock()
+
+        collection = TaskFactory().create(
+            "collection", [], pre_task_function_mock
+        )
+
+        assert collection.tasks["output"] is not None
+
+    def test_output_invokes_init_and_output(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        backend_config: tf.BackendConfig = {"path": "state_file.tfstate"}
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.init_configuration.backend_config = backend_config
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        output: Task = cast(Task, collection.tasks["output"])
+
+        output(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config=backend_config,
+            reconfigure=False,
+            environment={},
+        )
+        terraform.output.assert_called_once_with(
+            chdir=source_directory,
+            capture=None,
+            json=False,
+            environment={},
+        )
+
+    def test_output_uses_workspace(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
+        workspace = "workspace"
+        source_directory = "/some/path"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.workspace = workspace
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        output: Task = cast(Task, collection.tasks["output"])
+
+        output(Context())
+
+        terraform.select_workspace.assert_called_once_with(
+            workspace, chdir=source_directory, or_create=True, environment={}
+        )
+
+    def test_output_uses_json(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
+        workspace = "workspace"
+        source_directory = "/some/path"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.workspace = workspace
+            configuration.output_configuration.json = True
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        output: Task = cast(Task, collection.tasks["output"])
+
+        output(Context())
+
+        terraform.output.assert_called_once_with(
+            chdir=source_directory,
+            capture=None,
+            json=True,
+            environment={},
+        )
+
+    def test_output_uses_environment_in_all_commands_when_set(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        environment = {"ENV_VAR": "value"}
+        workspace = "workspace"
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.environment = environment
+            configuration.workspace = workspace
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        output: Task = cast(Task, collection.tasks["output"])
+
+        output(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=False,
+            environment=environment,
+        )
+
+        terraform.select_workspace.assert_called_once_with(
+            "workspace",
+            chdir=source_directory,
+            or_create=True,
+            environment=environment,
+        )
+
+        terraform.output.assert_called_once_with(
+            chdir=source_directory,
+            capture=None,
+            json=False,
+            environment=environment,
+        )
+
+    def test_output_returns_standard_output_when_capture_stdout_true(self):
+        terraform = Mock(spec=tf.Terraform)
+        task_factory = TaskFactory(
+            terraform_factory=TerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+
+        terraform.output.return_value = tf.Result(
+            stdout=StringIO("output_value\n"), stderr=None
+        )
+
+        def pre_task_function(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.capture_stdout = True
+
+        collection = task_factory.create("collection", [], pre_task_function)
+        output: Task = cast(Task, collection.tasks["output"])
+
+        output_value = output(Context())
+
+        assert output_value == "output_value"
