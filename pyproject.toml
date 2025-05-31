@@ -3,7 +3,7 @@ requires-python = ">=3.13,<4.0"
 
 [tool.poetry]
 name = "infrablocks.invoke_terraform"
-version = "0.0.2a11"
+version = "0.0.2a12"
 description = "Provides invoke tasks to interact with terraform"
 authors = [
     "Toby Clemson <tobyclemson@gmail.com>",
