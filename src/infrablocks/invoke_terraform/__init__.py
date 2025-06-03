@@ -1,5 +1,16 @@
-from .task_factory import Configuration as Configuration
-from .task_factory import PreTaskFunction
-from .task_factory import TaskFactory as TaskFactory
+from infrablocks.invoke_factory import parameter
 
-__all__ = ["PreTaskFunction"]
+from .task_factory import (
+    Configuration,
+    PreTaskFunction,
+    TaskFactory,
+    parameters,
+)
+
+__all__ = [
+    "Configuration",
+    "PreTaskFunction",
+    "TaskFactory",
+    "parameter",
+    "parameters",
+]

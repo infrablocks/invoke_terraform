@@ -18,7 +18,7 @@ packages = [
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0"
 invoke = "^2.2.0"
-infrablocks-invoke-factory = {version = "^0.0.3a6", allow-prereleases = true}
+infrablocks-invoke-factory = {version = "^0.0.3a10", allow-prereleases = true}
 
 [tool.poetry.group.dev.dependencies]
 coverage = "^7.6.10"

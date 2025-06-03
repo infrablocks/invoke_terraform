@@ -1,10 +1,14 @@
-from .terraform import BackendConfig, ConfigurationValue, Variables
-from .terraform import Environment as Environment
-from .terraform import Executor as Executor
-from .terraform import Result as Result
-from .terraform import StreamName as StreamName
-from .terraform import StreamNames as StreamNames
-from .terraform import Terraform as Terraform
+from .terraform import (
+    BackendConfig,
+    ConfigurationValue,
+    Environment,
+    Executor,
+    Result,
+    StreamName,
+    StreamNames,
+    Terraform,
+    Variables,
+)
 
 __all__ = [
     "BackendConfig",
@@ -12,6 +16,8 @@ __all__ = [
     "Environment",
     "Executor",
     "Result",
+    "StreamName",
+    "StreamNames",
     "Terraform",
     "Variables",
 ]
