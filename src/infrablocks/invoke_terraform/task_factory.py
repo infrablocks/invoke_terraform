@@ -1,6 +1,6 @@
 from collections.abc import Callable
 from dataclasses import dataclass
-from typing import NotRequired, TypedDict, Literal, LiteralString
+from typing import Literal, NotRequired, TypedDict, cast
 
 from invoke.collection import Collection
 from invoke.context import Context
@@ -60,9 +60,7 @@ class Configuration:
         )
 
 
-type PreTaskFunction = Callable[
-    [Context, Arguments, Configuration], None
-]
+type PreTaskFunction = Callable[[Context, Arguments, Configuration], None]
 
 
 class ParameterDict(TypedDict):
@@ -78,9 +76,17 @@ def parameters(
     plan: ParameterList | None = None,
     output: ParameterList | None = None,
 ) -> ParameterDict:
-    return ParameterDict(
-        all=all, apply=apply, plan=plan, output=output
-    )
+    dict: ParameterDict = ParameterDict()
+    for key, params in [
+        ("all", all),
+        ("apply", apply),
+        ("plan", plan),
+        ("output", output),
+    ]:
+        if params is not None:
+            dict[key] = params
+
+    return dict
 
 
 type Parameters = ParameterList | ParameterDict
@@ -88,47 +94,47 @@ type Parameters = ParameterList | ParameterDict
 
 class TaskFactory:
     def __init__(
-            self, terraform_factory: TerraformFactory = TerraformFactory()
+        self, terraform_factory: TerraformFactory = TerraformFactory()
     ):
         self._terraform_factory = terraform_factory
 
     def create(
-            self,
-            collection_name: str,
-            task_parameters: Parameters,
-            pre_task_function: PreTaskFunction,
+        self,
+        collection_name: str,
+        task_parameters: Parameters,
+        pre_task_function: PreTaskFunction,
     ) -> Collection:
         collection = Collection(collection_name)
 
         plan_task = create_task(
             self._create_plan(pre_task_function),
-            self._plan_parameters(task_parameters)
+            self._plan_parameters(task_parameters),
         )
         apply_task = create_task(
             self._create_apply(pre_task_function),
-            self._apply_parameters(task_parameters)
+            self._apply_parameters(task_parameters),
         )
         output_task = create_task(
             self._create_output(pre_task_function),
-            self._output_parameters(task_parameters)
+            self._output_parameters(task_parameters),
         )
 
         # TODO: investigate type issue
-        collection.add_task(
+        collection.add_task(  # pyright: ignore[reportUnknownMemberType]
             plan_task
-        )  # pyright: ignore[reportUnknownMemberType]
-        collection.add_task(
+        )
+        collection.add_task(  # pyright: ignore[reportUnknownMemberType]
             apply_task
-        )  # pyright: ignore[reportUnknownMemberType]
-        collection.add_task(
+        )
+        collection.add_task(  # pyright: ignore[reportUnknownMemberType]
             output_task
-        )  # pyright: ignore[reportUnknownMemberType]
+        )
 
         return collection
 
     def _create_plan(
-            self,
-            pre_task_function: PreTaskFunction,
+        self,
+        pre_task_function: PreTaskFunction,
     ) -> BodyCallable[None]:
         def plan(context: Context, arguments: Arguments):
             (terraform, configuration) = self._pre_command_setup(
@@ -143,8 +149,8 @@ class TaskFactory:
         return plan
 
     def _create_apply(
-            self,
-            pre_task_function: PreTaskFunction,
+        self,
+        pre_task_function: PreTaskFunction,
     ) -> BodyCallable[None]:
         def apply(context: Context, arguments: Arguments):
             (terraform, configuration) = self._pre_command_setup(
@@ -160,11 +166,9 @@ class TaskFactory:
         return apply
 
     def _create_output(
-            self, pre_task_function: PreTaskFunction
+        self, pre_task_function: PreTaskFunction
     ) -> BodyCallable[str | None]:
-        def output(
-                context: Context, arguments: Arguments
-        ) -> str | None:
+        def output(context: Context, arguments: Arguments) -> str | None:
             (terraform, configuration) = self._pre_command_setup(
                 pre_task_function, context, arguments
             )
@@ -198,31 +202,31 @@ class TaskFactory:
         return self._task_parameters(task_parameters, "output")
 
     def _task_parameters(
-            self,
-            task_parameters: Parameters,
-            task_name: Literal["apply", "plan", "output"],
+        self,
+        task_parameters: Parameters,
+        task_name: Literal["apply", "plan", "output"],
     ) -> ParameterList:
         if isinstance(task_parameters, dict):
+            task_parameters = cast(ParameterDict, task_parameters)
             return [
                 *self._lookup_parameters(task_parameters, "all"),
-                *self._lookup_parameters(task_parameters, task_name)
+                *self._lookup_parameters(task_parameters, task_name),
             ]
         return task_parameters
 
     @staticmethod
     def _lookup_parameters(
-            task_parameters: ParameterDict,
-            task_name: Literal["all", "apply", "plan", "output"],
+        task_parameters: ParameterDict,
+        task_name: Literal["all", "apply", "plan", "output"],
     ) -> ParameterList:
         parameters = task_parameters.get(task_name, None)
         return parameters if parameters is not None else []
 
-
     def _pre_command_setup(
-            self,
-            pre_task_function: PreTaskFunction,
-            context: Context,
-            arguments: Arguments,
+        self,
+        pre_task_function: PreTaskFunction,
+        context: Context,
+        arguments: Arguments,
     ) -> tuple[Terraform, Configuration]:
         configuration = Configuration.create_empty()
         pre_task_function(

@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import cast
+from typing import Any, cast
 from unittest.mock import Mock
 
 from invoke.context import Context
@@ -22,9 +22,10 @@ from tests.unit.infrablocks.invoke_terraform.test_support import (
 )
 
 
-def get_parameters(
-        task: Task
-) -> list[dict[str, str | int | float | bool]]:
+def get_parameters(task: Task | None) -> list[dict[str, Any]]:
+    if task is None:
+        raise ValueError("Task cannot be None")
+
     return [
         {
             "name": argument.name,
@@ -63,10 +64,15 @@ class TestTaskFactory:
         apply_parameters = get_parameters(collection.tasks["apply"])
         output_parameters = get_parameters(collection.tasks["output"])
 
-        assert plan_parameters == apply_parameters == output_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-        ]
+        assert (
+            plan_parameters
+            == apply_parameters
+            == output_parameters
+            == [
+                {"name": "foo", "default": 10, "help": "Foo parameter"},
+                {"name": "bar", "default": "twenty", "help": "Bar parameter"},
+            ]
+        )
 
     def test_creates_plan_task(self):
         pre_task_function_mock = Mock()
