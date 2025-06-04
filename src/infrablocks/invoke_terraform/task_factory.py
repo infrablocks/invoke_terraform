@@ -16,9 +16,9 @@ from infrablocks.invoke_terraform.terraform import (
     Environment,
     StreamNames,
     Terraform,
+    TerraformFactory,
     Variables,
 )
-from infrablocks.invoke_terraform.terraform_factory import TerraformFactory
 
 
 @dataclass

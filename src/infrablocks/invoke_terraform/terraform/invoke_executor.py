@@ -2,13 +2,10 @@ from typing import IO, Iterable
 
 from invoke.context import Context
 
-import infrablocks.invoke_terraform.terraform as tf
-from infrablocks.invoke_terraform.terraform.terraform import (
-    Environment,
-)
+from .terraform import Environment, Executor
 
 
-class InvokeExecutor(tf.Executor):
+class InvokeExecutor(Executor):
     def __init__(self, context: Context):
         self._context = context
 

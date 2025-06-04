@@ -2,7 +2,7 @@ from unittest.mock import Mock
 
 from invoke.context import Context
 
-from infrablocks.invoke_terraform.invoke_executor import InvokeExecutor
+from infrablocks.invoke_terraform.terraform import InvokeExecutor
 
 
 class TestInvokeExecutor:

@@ -1,3 +1,5 @@
-from .terraform_factory import (
-    TerraformFactory as TerraformFactory,
-)
+from .terraform_factory import MockTerraformFactory
+
+__all__ = [
+    "MockTerraformFactory",
+]

@@ -1,3 +1,5 @@
+from .factory import TerraformFactory
+from .invoke_executor import InvokeExecutor
 from .terraform import (
     BackendConfig,
     ConfigurationValue,
@@ -15,9 +17,11 @@ __all__ = [
     "ConfigurationValue",
     "Environment",
     "Executor",
+    "InvokeExecutor",
     "Result",
     "StreamName",
     "StreamNames",
     "Terraform",
+    "TerraformFactory",
     "Variables",
 ]
