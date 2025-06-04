@@ -1,9 +1,8 @@
-from collections.abc import Callable
-from dataclasses import dataclass
 from typing import Literal, NotRequired, TypedDict, cast
 
 from invoke.collection import Collection
 from invoke.context import Context
+from invoke.tasks import Task
 
 from infrablocks.invoke_factory import (
     Arguments,
@@ -12,55 +11,12 @@ from infrablocks.invoke_factory import (
     create_task,
 )
 from infrablocks.invoke_terraform.terraform import (
-    BackendConfig,
-    Environment,
     StreamNames,
     Terraform,
     TerraformFactory,
-    Variables,
 )
 
-
-@dataclass
-class InitConfiguration:
-    backend_config: BackendConfig
-    reconfigure: bool
-
-
-@dataclass
-class OutputConfiguration:
-    json: bool
-
-
-@dataclass
-class Configuration:
-    init_configuration: InitConfiguration
-    output_configuration: OutputConfiguration
-
-    source_directory: str
-    variables: Variables
-    workspace: str | None
-    auto_approve: bool = True
-
-    capture_stdout: bool = False
-    environment: Environment | None = None
-
-    @staticmethod
-    def create_empty():
-        return Configuration(
-            init_configuration=InitConfiguration(
-                backend_config={}, reconfigure=False
-            ),
-            output_configuration=OutputConfiguration(json=False),
-            source_directory="",
-            variables={},
-            workspace=None,
-            capture_stdout=False,
-            environment={},
-        )
-
-
-type PreTaskFunction = Callable[[Context, Arguments, Configuration], None]
+from .task_configuration import Configuration, GlobalConfigureFunction
 
 
 class ParameterDict(TypedDict):
@@ -92,7 +48,7 @@ def parameters(
 type Parameters = ParameterList | ParameterDict
 
 
-class TaskFactory:
+class TerraformTaskFactory:
     def __init__(
         self, terraform_factory: TerraformFactory = TerraformFactory()
     ):
@@ -101,23 +57,14 @@ class TaskFactory:
     def create(
         self,
         collection_name: str,
-        task_parameters: Parameters,
-        pre_task_function: PreTaskFunction,
+        parameters: Parameters,
+        configure_function: GlobalConfigureFunction,
     ) -> Collection:
         collection = Collection(collection_name)
 
-        plan_task = create_task(
-            self._create_plan(pre_task_function),
-            self._plan_parameters(task_parameters),
-        )
-        apply_task = create_task(
-            self._create_apply(pre_task_function),
-            self._apply_parameters(task_parameters),
-        )
-        output_task = create_task(
-            self._create_output(pre_task_function),
-            self._output_parameters(task_parameters),
-        )
+        plan_task = self.create_plan_task(configure_function, parameters)
+        apply_task = self.create_apply_task(configure_function, parameters)
+        output_task = self.create_output_task(configure_function, parameters)
 
         # TODO: investigate type issue
         collection.add_task(  # pyright: ignore[reportUnknownMemberType]
@@ -132,13 +79,14 @@ class TaskFactory:
 
         return collection
 
-    def _create_plan(
+    def create_plan_task(
         self,
-        pre_task_function: PreTaskFunction,
-    ) -> BodyCallable[None]:
+        configure_function: GlobalConfigureFunction,
+        parameters: Parameters,
+    ) -> Task[BodyCallable[None]]:
         def plan(context: Context, arguments: Arguments):
             (terraform, configuration) = self._pre_command_setup(
-                pre_task_function, context, arguments
+                configure_function, context, arguments
             )
             terraform.plan(
                 chdir=configuration.source_directory,
@@ -146,15 +94,16 @@ class TaskFactory:
                 environment=configuration.environment,
             )
 
-        return plan
+        return create_task(plan, self._plan_parameters(parameters))
 
-    def _create_apply(
+    def create_apply_task(
         self,
-        pre_task_function: PreTaskFunction,
-    ) -> BodyCallable[None]:
+        configure_function: GlobalConfigureFunction,
+        parameters: Parameters,
+    ) -> Task[BodyCallable[None]]:
         def apply(context: Context, arguments: Arguments):
             (terraform, configuration) = self._pre_command_setup(
-                pre_task_function, context, arguments
+                configure_function, context, arguments
             )
             terraform.apply(
                 chdir=configuration.source_directory,
@@ -163,14 +112,16 @@ class TaskFactory:
                 environment=configuration.environment,
             )
 
-        return apply
+        return create_task(apply, self._apply_parameters(parameters))
 
-    def _create_output(
-        self, pre_task_function: PreTaskFunction
-    ) -> BodyCallable[str | None]:
+    def create_output_task(
+        self,
+        configure_function: GlobalConfigureFunction,
+        parameters: Parameters,
+    ) -> Task[BodyCallable[str | None]]:
         def output(context: Context, arguments: Arguments) -> str | None:
             (terraform, configuration) = self._pre_command_setup(
-                pre_task_function, context, arguments
+                configure_function, context, arguments
             )
 
             capture: StreamNames | None = None
@@ -180,7 +131,7 @@ class TaskFactory:
             result = terraform.output(
                 chdir=configuration.source_directory,
                 capture=capture,
-                json=configuration.output_configuration.json,
+                json=configuration.output.json,
                 environment=configuration.environment,
             )
 
@@ -190,7 +141,7 @@ class TaskFactory:
 
             return None
 
-        return output
+        return create_task(output, self._output_parameters(parameters))
 
     def _plan_parameters(self, task_parameters: Parameters) -> ParameterList:
         return self._task_parameters(task_parameters, "plan")
@@ -224,12 +175,12 @@ class TaskFactory:
 
     def _pre_command_setup(
         self,
-        pre_task_function: PreTaskFunction,
+        configure_function: GlobalConfigureFunction,
         context: Context,
         arguments: Arguments,
     ) -> tuple[Terraform, Configuration]:
         configuration = Configuration.create_empty()
-        pre_task_function(
+        configure_function(
             context,
             arguments,
             configuration,
@@ -237,8 +188,8 @@ class TaskFactory:
         terraform = self._terraform_factory.build(context)
         terraform.init(
             chdir=configuration.source_directory,
-            backend_config=configuration.init_configuration.backend_config,
-            reconfigure=configuration.init_configuration.reconfigure,
+            backend_config=configuration.init.backend_config,
+            reconfigure=configuration.init.reconfigure,
             environment=configuration.environment,
         )
 

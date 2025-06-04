@@ -7,7 +7,7 @@ from invoke.tasks import Task
 
 from infrablocks.invoke_terraform import (
     Configuration,
-    TaskFactory,
+    TerraformTaskFactory,
     parameter,
     parameters,
 )
@@ -40,7 +40,7 @@ class TestTaskFactory:
     def test_correctly_names_collection(self):
         pre_task_function_mock = Mock()
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", [], pre_task_function_mock
         )
 
@@ -56,7 +56,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -77,7 +77,7 @@ class TestTaskFactory:
     def test_creates_plan_task(self):
         pre_task_function_mock = Mock()
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", [], pre_task_function_mock
         )
 
@@ -93,7 +93,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -117,7 +117,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -131,7 +131,7 @@ class TestTaskFactory:
 
     def test_plan_does_not_use_workspace_when_not_set(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
 
@@ -148,7 +148,7 @@ class TestTaskFactory:
 
     def test_plan_uses_workspace_when_set(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         workspace = "workspace"
@@ -169,14 +169,14 @@ class TestTaskFactory:
 
     def test_plan_initialises_with_reconfigure(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
 
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
-            configuration.init_configuration.reconfigure = True
+            configuration.init.reconfigure = True
 
         collection = task_factory.create("collection", [], pre_task_function)
         plan: Task = cast(Task, collection.tasks["plan"])
@@ -192,7 +192,7 @@ class TestTaskFactory:
 
     def test_plan_invokes_init_and_plan(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -202,7 +202,7 @@ class TestTaskFactory:
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
-            configuration.init_configuration.backend_config = backend_config
+            configuration.init.backend_config = backend_config
 
         collection = task_factory.create("collection", [], pre_task_function)
         plan: Task = cast(Task, collection.tasks["plan"])
@@ -221,7 +221,7 @@ class TestTaskFactory:
 
     def test_plan_uses_environment_in_all_commands_when_set(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -259,7 +259,7 @@ class TestTaskFactory:
     def test_creates_apply_task(self):
         pre_task_function_mock = Mock()
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", [], pre_task_function_mock
         )
 
@@ -275,7 +275,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -299,7 +299,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -313,7 +313,7 @@ class TestTaskFactory:
 
     def test_apply_invokes_init_and_apply(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -323,7 +323,7 @@ class TestTaskFactory:
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
-            configuration.init_configuration.backend_config = backend_config
+            configuration.init.backend_config = backend_config
 
         collection = task_factory.create("collection", [], pre_task_function)
         apply: Task = cast(Task, collection.tasks["apply"])
@@ -345,7 +345,7 @@ class TestTaskFactory:
 
     def test_apply_uses_workspace(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         workspace = "workspace"
@@ -366,7 +366,7 @@ class TestTaskFactory:
 
     def test_apply_uses_environment_in_all_commands_when_set(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -407,7 +407,7 @@ class TestTaskFactory:
     def test_creates_output_task(self):
         pre_task_function_mock = Mock()
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", [], pre_task_function_mock
         )
 
@@ -423,7 +423,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -447,7 +447,7 @@ class TestTaskFactory:
             ],
         )
 
-        collection = TaskFactory().create(
+        collection = TerraformTaskFactory().create(
             "collection", task_parameters, pre_task_function_mock
         )
 
@@ -461,7 +461,7 @@ class TestTaskFactory:
 
     def test_output_invokes_init_and_output(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -469,7 +469,7 @@ class TestTaskFactory:
 
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
-            configuration.init_configuration.backend_config = backend_config
+            configuration.init.backend_config = backend_config
 
         collection = task_factory.create("collection", [], pre_task_function)
         output: Task = cast(Task, collection.tasks["output"])
@@ -491,7 +491,7 @@ class TestTaskFactory:
 
     def test_output_uses_workspace(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         workspace = "workspace"
@@ -512,7 +512,7 @@ class TestTaskFactory:
 
     def test_output_uses_json(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         workspace = "workspace"
@@ -521,7 +521,7 @@ class TestTaskFactory:
         def pre_task_function(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.workspace = workspace
-            configuration.output_configuration.json = True
+            configuration.output.json = True
 
         collection = task_factory.create("collection", [], pre_task_function)
         output: Task = cast(Task, collection.tasks["output"])
@@ -537,7 +537,7 @@ class TestTaskFactory:
 
     def test_output_uses_environment_in_all_commands_when_set(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
@@ -577,7 +577,7 @@ class TestTaskFactory:
 
     def test_output_returns_standard_output_when_capture_stdout_true(self):
         terraform = Mock(spec=Terraform)
-        task_factory = TaskFactory(
+        task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
         source_directory = "/some/path"
