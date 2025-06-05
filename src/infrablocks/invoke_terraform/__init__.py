@@ -1,24 +1,20 @@
 from infrablocks.invoke_factory import parameter
 
-from .task_collection import (
+from .collection import (
     TerraformTaskCollection,
 )
-from .task_configuration import (
+from .configuration import (
     Configuration,
-    GlobalConfigureFunction,
+    ConfigureFunction,
 )
-from .task_factory import (
-    Parameters,
+from .factory import (
     TerraformTaskFactory,
-    parameters,
 )
 
 __all__ = [
     "Configuration",
-    "GlobalConfigureFunction",
+    "ConfigureFunction",
     "TerraformTaskFactory",
     "TerraformTaskCollection",
-    "Parameters",
     "parameter",
-    "parameters",
 ]

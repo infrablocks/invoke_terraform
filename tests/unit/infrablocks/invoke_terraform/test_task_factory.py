@@ -9,7 +9,6 @@ from infrablocks.invoke_terraform import (
     Configuration,
     TerraformTaskFactory,
     parameter,
-    parameters,
 )
 from infrablocks.invoke_terraform.terraform import (
     BackendConfig,
@@ -37,110 +36,17 @@ def get_parameters(task: Task | None) -> list[dict[str, Any]]:
 
 
 class TestTaskFactory:
-    def test_correctly_names_collection(self):
-        pre_task_function_mock = Mock()
-
-        collection = TerraformTaskFactory().create(
-            "collection", [], pre_task_function_mock
-        )
-
-        assert collection.name == "collection"
-
-    def test_adds_all_parameters_to_all_tasks(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            all=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        plan_parameters = get_parameters(collection.tasks["plan"])
-        apply_parameters = get_parameters(collection.tasks["apply"])
-        output_parameters = get_parameters(collection.tasks["output"])
-
-        assert (
-            plan_parameters
-            == apply_parameters
-            == output_parameters
-            == [
-                {"name": "foo", "default": 10, "help": "Foo parameter"},
-                {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-            ]
-        )
-
-    def test_creates_plan_task(self):
-        pre_task_function_mock = Mock()
-
-        collection = TerraformTaskFactory().create(
-            "collection", [], pre_task_function_mock
-        )
-
-        assert collection.tasks["plan"] is not None
-
-    def test_adds_only_plan_parameters_to_plan_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            plan=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        plan_parameters = get_parameters(collection.tasks["plan"])
-
-        assert plan_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-        ]
-
-    def test_adds_both_all_and_plan_parameters_to_plan_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            all=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-            plan=[
-                parameter(name="baz", help="Baz parameter", default=True),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        plan_parameters = get_parameters(collection.tasks["plan"])
-
-        assert plan_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-            {"name": "baz", "default": True, "help": "Baz parameter"},
-        ]
-
     def test_plan_does_not_use_workspace_when_not_set(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
             terraform_factory=MockTerraformFactory(terraform)
         )
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = "/some/path"
             configuration.workspace = None
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        plan: Task = cast(Task, collection.tasks["plan"])
+        plan = task_factory.create_plan_task(configure, [])
 
         plan(Context())
 
@@ -154,12 +60,11 @@ class TestTaskFactory:
         workspace = "workspace"
         source_directory = "/some/path"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        plan: Task = cast(Task, collection.tasks["plan"])
+        plan = task_factory.create_plan_task(configure, [])
 
         plan(Context())
 
@@ -174,12 +79,11 @@ class TestTaskFactory:
         )
         source_directory = "/some/path"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.init.reconfigure = True
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        plan: Task = cast(Task, collection.tasks["plan"])
+        plan = task_factory.create_plan_task(configure, [])
 
         plan(Context())
 
@@ -199,13 +103,12 @@ class TestTaskFactory:
         variables: Variables = {"foo": 1}
         backend_config: BackendConfig = {"path": "state_file.tfstate"}
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
             configuration.init.backend_config = backend_config
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        plan: Task = cast(Task, collection.tasks["plan"])
+        plan = task_factory.create_plan_task(configure, [])
 
         plan(Context())
 
@@ -228,13 +131,12 @@ class TestTaskFactory:
         environment = {"ENV_VAR": "value"}
         workspace = "workspace"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.environment = environment
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        plan: Task = cast(Task, collection.tasks["plan"])
+        plan = task_factory.create_plan_task(configure, [])
 
         plan(Context())
 
@@ -256,61 +158,6 @@ class TestTaskFactory:
             chdir=source_directory, vars={}, environment=environment
         )
 
-    def test_creates_apply_task(self):
-        pre_task_function_mock = Mock()
-
-        collection = TerraformTaskFactory().create(
-            "collection", [], pre_task_function_mock
-        )
-
-        assert collection.tasks["apply"] is not None
-
-    def test_adds_only_apply_parameters_to_apply_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            apply=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        apply_parameters = get_parameters(collection.tasks["apply"])
-
-        assert apply_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-        ]
-
-    def test_adds_both_all_and_apply_parameters_to_apply_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            all=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-            apply=[
-                parameter(name="baz", help="Baz parameter", default=True),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        apply_parameters = get_parameters(collection.tasks["apply"])
-
-        assert apply_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-            {"name": "baz", "default": True, "help": "Baz parameter"},
-        ]
-
     def test_apply_invokes_init_and_apply(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -320,13 +167,12 @@ class TestTaskFactory:
         variables: Variables = {"foo": 1}
         backend_config: BackendConfig = {"path": "state_file.tfstate"}
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.variables = variables
             configuration.init.backend_config = backend_config
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        apply: Task = cast(Task, collection.tasks["apply"])
+        apply = task_factory.create_apply_task(configure, [])
 
         apply(Context())
 
@@ -351,12 +197,11 @@ class TestTaskFactory:
         workspace = "workspace"
         source_directory = "/some/path"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        apply: Task = cast(Task, collection.tasks["apply"])
+        apply = task_factory.create_apply_task(configure, [])
 
         apply(Context())
 
@@ -373,13 +218,12 @@ class TestTaskFactory:
         environment = {"ENV_VAR": "value"}
         workspace = "workspace"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.environment = environment
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        apply: Task = cast(Task, collection.tasks["apply"])
+        apply = task_factory.create_apply_task(configure, [])
 
         apply(Context())
 
@@ -404,61 +248,6 @@ class TestTaskFactory:
             environment=environment,
         )
 
-    def test_creates_output_task(self):
-        pre_task_function_mock = Mock()
-
-        collection = TerraformTaskFactory().create(
-            "collection", [], pre_task_function_mock
-        )
-
-        assert collection.tasks["output"] is not None
-
-    def test_adds_only_output_parameters_to_output_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            output=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        output_parameters = get_parameters(collection.tasks["output"])
-
-        assert output_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-        ]
-
-    def test_adds_both_all_and_output_parameters_to_output_task(self):
-        pre_task_function_mock = Mock()
-
-        task_parameters = parameters(
-            all=[
-                parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="bar", help="Bar parameter", default="twenty"),
-            ],
-            output=[
-                parameter(name="baz", help="Baz parameter", default=True),
-            ],
-        )
-
-        collection = TerraformTaskFactory().create(
-            "collection", task_parameters, pre_task_function_mock
-        )
-
-        output_parameters = get_parameters(collection.tasks["output"])
-
-        assert output_parameters == [
-            {"name": "foo", "default": 10, "help": "Foo parameter"},
-            {"name": "bar", "default": "twenty", "help": "Bar parameter"},
-            {"name": "baz", "default": True, "help": "Baz parameter"},
-        ]
-
     def test_output_invokes_init_and_output(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -467,12 +256,11 @@ class TestTaskFactory:
         source_directory = "/some/path"
         backend_config: BackendConfig = {"path": "state_file.tfstate"}
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.init.backend_config = backend_config
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        output: Task = cast(Task, collection.tasks["output"])
+        output = task_factory.create_output_task(configure, [])
 
         output(Context())
 
@@ -497,12 +285,11 @@ class TestTaskFactory:
         workspace = "workspace"
         source_directory = "/some/path"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        output: Task = cast(Task, collection.tasks["output"])
+        output = task_factory.create_output_task(configure, [])
 
         output(Context())
 
@@ -518,13 +305,12 @@ class TestTaskFactory:
         workspace = "workspace"
         source_directory = "/some/path"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.workspace = workspace
             configuration.output.json = True
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        output: Task = cast(Task, collection.tasks["output"])
+        output = task_factory.create_output_task(configure, [])
 
         output(Context())
 
@@ -544,13 +330,12 @@ class TestTaskFactory:
         environment = {"ENV_VAR": "value"}
         workspace = "workspace"
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
             configuration.environment = environment
             configuration.workspace = workspace
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        output: Task = cast(Task, collection.tasks["output"])
+        output = task_factory.create_output_task(configure, [])
 
         output(Context())
 
@@ -586,12 +371,11 @@ class TestTaskFactory:
             stdout=StringIO("output_value\n"), stderr=None
         )
 
-        def pre_task_function(_context, _, configuration: Configuration):
+        def configure(_context, _, configuration: Configuration):
             configuration.source_directory = source_directory
-            configuration.capture_stdout = True
+            configuration.output.capture_stdout = True
 
-        collection = task_factory.create("collection", [], pre_task_function)
-        output: Task = cast(Task, collection.tasks["output"])
+        output = task_factory.create_output_task(configure, [])
 
         output_value = output(Context())
 
