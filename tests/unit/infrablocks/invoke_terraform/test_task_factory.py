@@ -1,5 +1,5 @@
 from io import StringIO
-from typing import Any, cast
+from typing import Any
 from unittest.mock import Mock
 
 from invoke.context import Context
@@ -8,7 +8,6 @@ from invoke.tasks import Task
 from infrablocks.invoke_terraform import (
     Configuration,
     TerraformTaskFactory,
-    parameter,
 )
 from infrablocks.invoke_terraform.terraform import (
     BackendConfig,
@@ -245,6 +244,205 @@ class TestTaskFactory:
             chdir=source_directory,
             vars={},
             autoapprove=True,
+            environment=environment,
+        )
+
+    def test_destroy_invokes_init_and_destroy(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        variables: Variables = {"foo": 1}
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.variables = variables
+            configuration.init.backend_config = backend_config
+
+        destroy = task_factory.create_destroy_task(configure, [])
+
+        destroy(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config=backend_config,
+            reconfigure=False,
+            environment={},
+        )
+        terraform.destroy.assert_called_once_with(
+            chdir=source_directory,
+            vars=variables,
+            autoapprove=True,
+            environment={},
+        )
+
+    def test_destroy_uses_workspace(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        workspace = "workspace"
+        source_directory = "/some/path"
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.workspace = workspace
+
+        destroy = task_factory.create_destroy_task(configure, [])
+
+        destroy(Context())
+
+        terraform.select_workspace.assert_called_once_with(
+            workspace, chdir=source_directory, or_create=True, environment={}
+        )
+
+    def test_destroy_uses_environment_in_all_commands_when_set(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        environment = {"ENV_VAR": "value"}
+        workspace = "workspace"
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.environment = environment
+            configuration.workspace = workspace
+
+        destroy = task_factory.create_destroy_task(configure, [])
+
+        destroy(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=False,
+            environment=environment,
+        )
+
+        terraform.select_workspace.assert_called_once_with(
+            "workspace",
+            chdir=source_directory,
+            or_create=True,
+            environment=environment,
+        )
+
+        terraform.destroy.assert_called_once_with(
+            chdir=source_directory,
+            vars={},
+            autoapprove=True,
+            environment=environment,
+        )
+
+    def test_validate_invokes_init_and_validate(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.init.backend_config = backend_config
+
+        validate = task_factory.create_validate_task(configure, [])
+
+        validate(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config=backend_config,
+            reconfigure=False,
+            environment={},
+        )
+        terraform.validate.assert_called_once_with(
+            chdir=source_directory,
+            json=False,
+            environment={},
+        )
+
+    def test_validate_uses_workspace(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        workspace = "workspace"
+        source_directory = "/some/path"
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.workspace = workspace
+
+        validate = task_factory.create_validate_task(configure, [])
+
+        validate(Context())
+
+        terraform.select_workspace.assert_called_once_with(
+            workspace, chdir=source_directory, or_create=True, environment={}
+        )
+
+    def test_validate_uses_json(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        workspace = "workspace"
+        source_directory = "/some/path"
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.workspace = workspace
+            configuration.validate.json = True
+
+        validate = task_factory.create_validate_task(configure, [])
+
+        validate(Context())
+
+        terraform.validate.assert_called_once_with(
+            chdir=source_directory,
+            json=True,
+            environment={},
+        )
+
+    def test_validate_uses_environment_in_all_commands_when_set(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        environment = {"ENV_VAR": "value"}
+        workspace = "workspace"
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.environment = environment
+            configuration.workspace = workspace
+
+        validate = task_factory.create_validate_task(configure, [])
+
+        validate(Context())
+
+        terraform.init.assert_called_once_with(
+            chdir=source_directory,
+            backend_config={},
+            reconfigure=False,
+            environment=environment,
+        )
+
+        terraform.select_workspace.assert_called_once_with(
+            "workspace",
+            chdir=source_directory,
+            or_create=True,
+            environment=environment,
+        )
+
+        terraform.validate.assert_called_once_with(
+            chdir=source_directory,
+            json=False,
             environment=environment,
         )
 

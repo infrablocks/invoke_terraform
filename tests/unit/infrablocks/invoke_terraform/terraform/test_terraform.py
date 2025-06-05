@@ -248,6 +248,47 @@ class TestTerraform:
         assert result.stderr is not None
         assert result.stderr.read() == "Error!\n"
 
+    def test_validate_executes(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.validate()
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "validate"], environment=None
+        )
+
+    def test_validate_executes_with_chdir(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.validate(chdir="/some/dir")
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "-chdir=/some/dir", "validate"], environment=None
+        )
+
+    def test_validate_executes_with_environment(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        environment = {"ENV_VAR": "value"}
+
+        terraform.validate(environment=environment)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "validate"], environment=environment
+        )
+
+    def test_validate_executes_with_json(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.validate(json=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "validate", "-json"], environment=None
+        )
+
     def test_apply_executes(self):
         executor = Mock(spec=Executor)
         terraform = Terraform(executor)
@@ -477,6 +518,241 @@ class TestTerraform:
 
         executor.execute.assert_called_once_with(
             ["terraform", "apply"], environment=environment
+        )
+
+    def test_destroy_executes(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.destroy()
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy"], environment=None
+        )
+
+    def test_destroy_executes_with_chdir(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.destroy(chdir="/some/dir")
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "-chdir=/some/dir", "destroy"], environment=None
+        )
+
+    def test_destroy_executes_with_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": "bar"}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=bar"'], environment=None
+        )
+
+    def test_destroy_executes_with_integer_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": 1}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=1"'], environment=None
+        )
+
+    def test_destroy_executes_with_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": 1.2}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=1.2"'], environment=None
+        )
+
+    def test_destroy_executes_with_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": True}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=true"'], environment=None
+        )
+
+    def test_destroy_executes_with_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": None}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=null"'], environment=None
+        )
+
+    def test_destroy_executes_with_list_of_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": ["ex", "why", "zed"]}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            [
+                "terraform",
+                "destroy",
+                '-var="foo=[\\"ex\\", \\"why\\", \\"zed\\"]"',
+            ],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_list_of_integer_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [1, 2, 3]}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=[1, 2, 3]"'], environment=None
+        )
+
+    def test_destroy_executes_with_list_of_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [1.1, 2.2, 3.3]}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=[1.1, 2.2, 3.3]"'],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_list_of_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [True, False, True]}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=[true, false, true]"'],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_list_of_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": [None, None, None]}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo=[null, null, null]"'],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_mapping_of_string_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": "x", "b": "y"}}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            [
+                "terraform",
+                "destroy",
+                '-var="foo={\\"a\\": \\"x\\", \\"b\\": \\"y\\"}"',
+            ],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_mapping_of_integer_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": 1, "b": 2}}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", '-var="foo={\\"a\\": 1, \\"b\\": 2}"'],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_mapping_of_float_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": 1.1, "b": 2.2}}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            [
+                "terraform",
+                "destroy",
+                '-var="foo={\\"a\\": 1.1, \\"b\\": 2.2}"',
+            ],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_mapping_of_boolean_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": True, "b": False}}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            [
+                "terraform",
+                "destroy",
+                '-var="foo={\\"a\\": true, \\"b\\": false}"',
+            ],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_mapping_of_none_var(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        variables: Variables = {"foo": {"a": True, "b": False}}
+
+        terraform.destroy(vars=variables)
+
+        executor.execute.assert_called_once_with(
+            [
+                "terraform",
+                "destroy",
+                '-var="foo={\\"a\\": true, \\"b\\": false}"',
+            ],
+            environment=None,
+        )
+
+    def test_destroy_executes_with_autoapprove(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+
+        terraform.destroy(autoapprove=True)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy", "-auto-approve"], environment=None
+        )
+
+    def test_destroy_executes_with_environment(self):
+        executor = Mock(spec=Executor)
+        terraform = Terraform(executor)
+        environment = {"ENV_VAR": "value"}
+
+        terraform.destroy(environment=environment)
+
+        executor.execute.assert_called_once_with(
+            ["terraform", "destroy"], environment=environment
         )
 
     def test_select_workspace_executes(self):

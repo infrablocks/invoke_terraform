@@ -57,6 +57,41 @@ class TerraformTaskFactory:
 
         return create_task(apply, parameters)
 
+    def create_destroy_task(
+        self,
+        configure_function: ConfigureFunction[Configuration],
+        parameters: ParameterList,
+    ) -> Task[BodyCallable[None]]:
+        def destroy(context: Context, arguments: Arguments):
+            (terraform, configuration) = self._setup_configuration(
+                configure_function, context, arguments
+            )
+            terraform.destroy(
+                chdir=configuration.source_directory,
+                vars=configuration.variables,
+                autoapprove=configuration.auto_approve,
+                environment=configuration.environment,
+            )
+
+        return create_task(destroy, parameters)
+
+    def create_validate_task(
+        self,
+        configure_function: ConfigureFunction[Configuration],
+        parameters: ParameterList,
+    ) -> Task[BodyCallable[None]]:
+        def validate(context: Context, arguments: Arguments):
+            (terraform, configuration) = self._setup_configuration(
+                configure_function, context, arguments
+            )
+            terraform.validate(
+                chdir=configuration.source_directory,
+                json=configuration.validate.json,
+                environment=configuration.environment,
+            )
+
+        return create_task(validate, parameters)
+
     def create_output_task(
         self,
         configure_function: ConfigureFunction[Configuration],
@@ -78,7 +113,10 @@ class TerraformTaskFactory:
                 environment=configuration.environment,
             )
 
-            if configuration.output.capture_stdout and result.stdout is not None:
+            if (
+                configuration.output.capture_stdout
+                and result.stdout is not None
+            ):
                 output = result.stdout.read()
                 return output.strip()
 

@@ -41,7 +41,9 @@ class TestTaskCollection:
 
         assert collection.name == "collection"
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_creates_task(self, task_name: str):
         collection = (
             TerraformTaskCollection().for_configuration("collection").create()
@@ -49,7 +51,9 @@ class TestTaskCollection:
 
         assert collection.tasks[task_name] is not None
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_defines_global_parameters_on_task(self, task_name: str):
         collection = (
             TerraformTaskCollection()
@@ -68,7 +72,9 @@ class TestTaskCollection:
             {"name": "bar", "default": "twenty", "help": "Bar parameter"},
         ]
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_defines_global_configure_function_for_task(self, task_name: str):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -98,7 +104,9 @@ class TestTaskCollection:
             environment={},
         )
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_allows_extra_parameters_to_be_defined_for_tasks(self, task_name):
         collection = (
             TerraformTaskCollection()
@@ -109,7 +117,7 @@ class TestTaskCollection:
             )
             .with_extra_task_parameters(
                 task_name,
-                parameter(name="baz", help="Baz parameter", default=True)
+                parameter(name="baz", help="Baz parameter", default=True),
             )
             .create()
         )
@@ -122,7 +130,9 @@ class TestTaskCollection:
             {"name": "baz", "default": True, "help": "Baz parameter"},
         ]
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_allows_parameters_to_be_overridden_for_tasks(self, task_name):
         collection = (
             TerraformTaskCollection()
@@ -134,7 +144,7 @@ class TestTaskCollection:
             .with_overridden_task_parameters(
                 task_name,
                 parameter(name="foo", help="Foo parameter", default=10),
-                parameter(name="baz", help="Baz parameter", default=True)
+                parameter(name="baz", help="Baz parameter", default=True),
             )
             .create()
         )
@@ -146,9 +156,11 @@ class TestTaskCollection:
             {"name": "baz", "default": True, "help": "Baz parameter"},
         ]
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_allows_extra_configure_function_to_be_defined_for_tasks(
-            self, task_name
+        self, task_name
     ):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -182,9 +194,11 @@ class TestTaskCollection:
             environment={"EXTRA_ENV_VAR": "value"},
         )
 
-    @pytest.mark.parametrize("task_name", ["plan", "apply", "output"])
+    @pytest.mark.parametrize(
+        "task_name", ["validate", "plan", "apply", "destroy", "output"]
+    )
     def test_allows_configure_function_to_be_overridden_for_tasks(
-            self, task_name
+        self, task_name
     ):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(

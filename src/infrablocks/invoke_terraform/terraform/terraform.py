@@ -73,6 +73,20 @@ class Terraform:
 
         self._executor.execute(command, environment=environment)
 
+    def validate(
+        self,
+        chdir: str | None = None,
+        json: bool = False,
+        environment: Environment | None = None,
+    ):
+        base_command = self._build_base_command(chdir)
+        command = base_command + ["validate"]
+
+        if json:
+            command = command + ["-json"]
+
+        self._executor.execute(command, environment=environment)
+
     def plan(
         self,
         chdir: str | None = None,
@@ -96,6 +110,24 @@ class Terraform:
         command = (
             base_command
             + ["apply"]
+            + autoapprove_flag
+            + self._build_vars(vars)
+        )
+
+        self._executor.execute(command, environment=environment)
+
+    def destroy(
+        self,
+        chdir: str | None = None,
+        vars: Variables | None = None,
+        autoapprove: bool = False,
+        environment: Environment | None = None,
+    ):
+        base_command = self._build_base_command(chdir)
+        autoapprove_flag = ["-auto-approve"] if autoapprove else []
+        command = (
+            base_command
+            + ["destroy"]
             + autoapprove_flag
             + self._build_vars(vars)
         )
