@@ -35,6 +35,22 @@ def get_parameters(task: Task | None) -> list[dict[str, Any]]:
 
 
 class TestTaskFactory:
+    def test_plan_includes_configuration_name_in_docstring(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = "/some/path"
+            configuration.workspace = None
+
+        plan = task_factory.create_plan_task("database", configure, [])
+
+        assert (
+            plan.body.__doc__ == "Plan the database Terraform configuration."
+        )
+
     def test_plan_does_not_use_workspace_when_not_set(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -45,7 +61,7 @@ class TestTaskFactory:
             configuration.source_directory = "/some/path"
             configuration.workspace = None
 
-        plan = task_factory.create_plan_task(configure, [])
+        plan = task_factory.create_plan_task("database", configure, [])
 
         plan(Context())
 
@@ -63,7 +79,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        plan = task_factory.create_plan_task(configure, [])
+        plan = task_factory.create_plan_task("database", configure, [])
 
         plan(Context())
 
@@ -82,7 +98,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.init.reconfigure = True
 
-        plan = task_factory.create_plan_task(configure, [])
+        plan = task_factory.create_plan_task("database", configure, [])
 
         plan(Context())
 
@@ -107,7 +123,7 @@ class TestTaskFactory:
             configuration.variables = variables
             configuration.init.backend_config = backend_config
 
-        plan = task_factory.create_plan_task(configure, [])
+        plan = task_factory.create_plan_task("database", configure, [])
 
         plan(Context())
 
@@ -135,7 +151,7 @@ class TestTaskFactory:
             configuration.environment = environment
             configuration.workspace = workspace
 
-        plan = task_factory.create_plan_task(configure, [])
+        plan = task_factory.create_plan_task("database", configure, [])
 
         plan(Context())
 
@@ -157,6 +173,27 @@ class TestTaskFactory:
             chdir=source_directory, vars={}, environment=environment
         )
 
+    def test_apply_includes_configuration_name_in_docstring(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        variables: Variables = {"foo": 1}
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.variables = variables
+            configuration.init.backend_config = backend_config
+
+        apply = task_factory.create_apply_task("loadbalancer", configure, [])
+
+        assert (
+            apply.body.__doc__
+            == "Apply the loadbalancer Terraform configuration."
+        )
+
     def test_apply_invokes_init_and_apply(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -171,7 +208,7 @@ class TestTaskFactory:
             configuration.variables = variables
             configuration.init.backend_config = backend_config
 
-        apply = task_factory.create_apply_task(configure, [])
+        apply = task_factory.create_apply_task("loadbalancer", configure, [])
 
         apply(Context())
 
@@ -200,7 +237,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        apply = task_factory.create_apply_task(configure, [])
+        apply = task_factory.create_apply_task("loadbalancer", configure, [])
 
         apply(Context())
 
@@ -222,7 +259,7 @@ class TestTaskFactory:
             configuration.environment = environment
             configuration.workspace = workspace
 
-        apply = task_factory.create_apply_task(configure, [])
+        apply = task_factory.create_apply_task("loadbalancer", configure, [])
 
         apply(Context())
 
@@ -247,6 +284,27 @@ class TestTaskFactory:
             environment=environment,
         )
 
+    def test_destroy_includes_configuration_name_in_docstring(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        variables: Variables = {"foo": 1}
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.variables = variables
+            configuration.init.backend_config = backend_config
+
+        destroy = task_factory.create_destroy_task("service", configure, [])
+
+        assert (
+            destroy.body.__doc__
+            == "Destroy the service Terraform configuration."
+        )
+
     def test_destroy_invokes_init_and_destroy(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -261,7 +319,7 @@ class TestTaskFactory:
             configuration.variables = variables
             configuration.init.backend_config = backend_config
 
-        destroy = task_factory.create_destroy_task(configure, [])
+        destroy = task_factory.create_destroy_task("service", configure, [])
 
         destroy(Context())
 
@@ -290,7 +348,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        destroy = task_factory.create_destroy_task(configure, [])
+        destroy = task_factory.create_destroy_task("service", configure, [])
 
         destroy(Context())
 
@@ -312,7 +370,7 @@ class TestTaskFactory:
             configuration.environment = environment
             configuration.workspace = workspace
 
-        destroy = task_factory.create_destroy_task(configure, [])
+        destroy = task_factory.create_destroy_task("service", configure, [])
 
         destroy(Context())
 
@@ -337,6 +395,27 @@ class TestTaskFactory:
             environment=environment,
         )
 
+    def test_validate_includes_configuration_name_in_docstring(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.init.backend_config = backend_config
+
+        validate = task_factory.create_validate_task(
+            "repository", configure, []
+        )
+
+        assert (
+            validate.body.__doc__
+            == "Validate the repository Terraform configuration."
+        )
+
     def test_validate_invokes_init_and_validate(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -349,7 +428,9 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.init.backend_config = backend_config
 
-        validate = task_factory.create_validate_task(configure, [])
+        validate = task_factory.create_validate_task(
+            "repository", configure, []
+        )
 
         validate(Context())
 
@@ -377,7 +458,9 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        validate = task_factory.create_validate_task(configure, [])
+        validate = task_factory.create_validate_task(
+            "repository", configure, []
+        )
 
         validate(Context())
 
@@ -398,7 +481,9 @@ class TestTaskFactory:
             configuration.workspace = workspace
             configuration.validate.json = True
 
-        validate = task_factory.create_validate_task(configure, [])
+        validate = task_factory.create_validate_task(
+            "repository", configure, []
+        )
 
         validate(Context())
 
@@ -422,7 +507,9 @@ class TestTaskFactory:
             configuration.environment = environment
             configuration.workspace = workspace
 
-        validate = task_factory.create_validate_task(configure, [])
+        validate = task_factory.create_validate_task(
+            "repository", configure, []
+        )
 
         validate(Context())
 
@@ -446,6 +533,25 @@ class TestTaskFactory:
             environment=environment,
         )
 
+    def test_output_includes_configuration_name_in_docstring(self):
+        terraform = Mock(spec=Terraform)
+        task_factory = TerraformTaskFactory(
+            terraform_factory=MockTerraformFactory(terraform)
+        )
+        source_directory = "/some/path"
+        backend_config: BackendConfig = {"path": "state_file.tfstate"}
+
+        def configure(_context, _, configuration: Configuration):
+            configuration.source_directory = source_directory
+            configuration.init.backend_config = backend_config
+
+        output = task_factory.create_output_task("migrations", configure, [])
+
+        assert (
+            output.body.__doc__
+            == "Output from the migrations Terraform configuration."
+        )
+
     def test_output_invokes_init_and_output(self):
         terraform = Mock(spec=Terraform)
         task_factory = TerraformTaskFactory(
@@ -458,7 +564,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.init.backend_config = backend_config
 
-        output = task_factory.create_output_task(configure, [])
+        output = task_factory.create_output_task("migrations", configure, [])
 
         output(Context())
 
@@ -487,7 +593,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.workspace = workspace
 
-        output = task_factory.create_output_task(configure, [])
+        output = task_factory.create_output_task("migrations", configure, [])
 
         output(Context())
 
@@ -508,7 +614,7 @@ class TestTaskFactory:
             configuration.workspace = workspace
             configuration.output.json = True
 
-        output = task_factory.create_output_task(configure, [])
+        output = task_factory.create_output_task("migrations", configure, [])
 
         output(Context())
 
@@ -533,7 +639,7 @@ class TestTaskFactory:
             configuration.environment = environment
             configuration.workspace = workspace
 
-        output = task_factory.create_output_task(configure, [])
+        output = task_factory.create_output_task("migrations", configure, [])
 
         output(Context())
 
@@ -573,7 +679,7 @@ class TestTaskFactory:
             configuration.source_directory = source_directory
             configuration.output.capture_stdout = True
 
-        output = task_factory.create_output_task(configure, [])
+        output = task_factory.create_output_task("migrations", configure, [])
 
         output_value = output(Context())
 

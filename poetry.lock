@@ -395,13 +395,13 @@ all = ["flake8 (>=7.1.1)", "mypy (>=1.11.2)", "pytest (>=8.3.2)", "ruff (>=0.6.2
 
 [[package]]
 name = "infrablocks-invoke-factory"
-version = "0.0.3a10"
+version = "0.0.3a11"
 description = "Base classes and modules to aid in creating custom invoke tasks."
 optional = false
 python-versions = "<4.0,>=3.13"
 files = [
-    {file = "infrablocks_invoke_factory-0.0.3a10-py3-none-any.whl", hash = "sha256:eb851a38b4973614dad4b53c9d5056d4491f6b173b48b1adfa6e430565f88477"},
-    {file = "infrablocks_invoke_factory-0.0.3a10.tar.gz", hash = "sha256:eafa04439a888de098ecbddf25458f6bc2d367f005d02e9e295d7f67fdcff8b6"},
+    {file = "infrablocks_invoke_factory-0.0.3a11-py3-none-any.whl", hash = "sha256:7c85c13a955e4ccb34da58dd7da93b5242f98228a855dd452ac8f9cd51c038fa"},
+    {file = "infrablocks_invoke_factory-0.0.3a11.tar.gz", hash = "sha256:332ce0bdb93987eaf3da4604543f5240acda483a7489dd223dd2bf72ad724f73"},
 ]
 
 [package.dependencies]
@@ -1030,13 +1030,13 @@ pytest = ">=3.5.0"
 
 [[package]]
 name = "pytest-pretty"
-version = "1.2.0"
+version = "1.3.0"
 description = "pytest plugin for printing summary data as I want it"
 optional = false
-python-versions = ">=3.7"
+python-versions = ">=3.9"
 files = [
-    {file = "pytest_pretty-1.2.0-py3-none-any.whl", hash = "sha256:6f79122bf53864ae2951b6c9e94d7a06a87ef753476acd4588aeac018f062036"},
-    {file = "pytest_pretty-1.2.0.tar.gz", hash = "sha256:105a355f128e392860ad2c478ae173ff96d2f03044692f9818ff3d49205d3a60"},
+    {file = "pytest_pretty-1.3.0-py3-none-any.whl", hash = "sha256:074b9d5783cef9571494543de07e768a4dda92a3e85118d6c7458c67297159b7"},
+    {file = "pytest_pretty-1.3.0.tar.gz", hash = "sha256:97e9921be40f003e40ae78db078d4a0c1ea42bf73418097b5077970c2cc43bf3"},
 ]
 
 [package.dependencies]
@@ -1334,4 +1334,4 @@ watchmedo = ["PyYAML (>=3.10)"]
 [metadata]
 lock-version = "2.0"
 python-versions = ">=3.13,<4.0"
-content-hash = "adc059700d23aaabb9a443eac9efe06c8778cdfe4556996312cc09851088aa4c"
+content-hash = "db93e868fa76f79ad21d258cb183f05339d6934eb41d352c784365b9a4c09a0a"

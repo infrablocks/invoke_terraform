@@ -254,25 +254,33 @@ class TerraformTaskCollection:
         return combined_configure_function
 
     def create(self) -> Collection:
+        if self.configuration_name is None:
+            raise ValueError("Configuration name must be set before creating.")
+
         collection = Collection(self.configuration_name)
 
         validate_task = self._task_factory.create_validate_task(
+            self.configuration_name,
             self._resolve_configure_function("validate"),
             self._resolve_parameters("validate"),
         )
         plan_task = self._task_factory.create_plan_task(
+            self.configuration_name,
             self._resolve_configure_function("plan"),
             self._resolve_parameters("plan"),
         )
         apply_task = self._task_factory.create_apply_task(
+            self.configuration_name,
             self._resolve_configure_function("apply"),
             self._resolve_parameters("apply"),
         )
         destroy_task = self._task_factory.create_destroy_task(
+            self.configuration_name,
             self._resolve_configure_function("destroy"),
             self._resolve_parameters("destroy"),
         )
         output_task = self._task_factory.create_output_task(
+            self.configuration_name,
             self._resolve_configure_function("output"),
             self._resolve_parameters("output"),
         )

@@ -24,6 +24,7 @@ class TerraformTaskFactory:
 
     def create_plan_task(
         self,
+        configuration_name: str,
         configure_function: ConfigureFunction[Configuration],
         parameters: ParameterList,
     ) -> Task[BodyCallable[None]]:
@@ -37,10 +38,15 @@ class TerraformTaskFactory:
                 environment=configuration.environment,
             )
 
+        plan.__doc__ = (
+            f"Plan the {configuration_name} Terraform configuration."
+        )
+
         return create_task(plan, parameters)
 
     def create_apply_task(
         self,
+        configuration_name: str,
         configure_function: ConfigureFunction[Configuration],
         parameters: ParameterList,
     ) -> Task[BodyCallable[None]]:
@@ -55,10 +61,15 @@ class TerraformTaskFactory:
                 environment=configuration.environment,
             )
 
+        apply.__doc__ = (
+            f"Apply the {configuration_name} Terraform configuration."
+        )
+
         return create_task(apply, parameters)
 
     def create_destroy_task(
         self,
+        configuration_name: str,
         configure_function: ConfigureFunction[Configuration],
         parameters: ParameterList,
     ) -> Task[BodyCallable[None]]:
@@ -73,10 +84,15 @@ class TerraformTaskFactory:
                 environment=configuration.environment,
             )
 
+        destroy.__doc__ = (
+            f"Destroy the {configuration_name} Terraform configuration."
+        )
+
         return create_task(destroy, parameters)
 
     def create_validate_task(
         self,
+        configuration_name: str,
         configure_function: ConfigureFunction[Configuration],
         parameters: ParameterList,
     ) -> Task[BodyCallable[None]]:
@@ -90,10 +106,15 @@ class TerraformTaskFactory:
                 environment=configuration.environment,
             )
 
+        validate.__doc__ = (
+            f"Validate the {configuration_name} Terraform configuration."
+        )
+
         return create_task(validate, parameters)
 
     def create_output_task(
         self,
+        configuration_name: str,
         configure_function: ConfigureFunction[Configuration],
         parameters: ParameterList,
     ) -> Task[BodyCallable[str | None]]:
@@ -121,6 +142,10 @@ class TerraformTaskFactory:
                 return output.strip()
 
             return None
+
+        output.__doc__ = (
+            f"Output from the {configuration_name} Terraform configuration."
+        )
 
         return create_task(output, parameters)
 
