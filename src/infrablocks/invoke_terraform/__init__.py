@@ -4,17 +4,27 @@ from .collection import (
     TerraformTaskCollection,
 )
 from .configuration import (
+    ApplyConfiguration,
     Configuration,
     ConfigureFunction,
+    DestroyConfiguration,
+    OutputConfiguration,
+    PlanConfiguration,
+    ValidateConfiguration,
 )
 from .factory import (
     TerraformTaskFactory,
 )
 
 __all__ = [
+    "ApplyConfiguration",
     "Configuration",
     "ConfigureFunction",
-    "TerraformTaskFactory",
+    "DestroyConfiguration",
+    "OutputConfiguration",
+    "PlanConfiguration",
     "TerraformTaskCollection",
+    "TerraformTaskFactory",
+    "ValidateConfiguration",
     "parameter",
 ]
