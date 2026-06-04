@@ -17,7 +17,7 @@ packages = [
 
 [tool.poetry.dependencies]
 python = ">=3.13,<4.0"
-invoke = "^2.2.0"
+invoke = ">=2.2.0,<4.0"
 infrablocks-invoke-factory = "^0.1.0"
 
 [tool.poetry.group.dev.dependencies]
